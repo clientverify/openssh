@@ -80,7 +80,8 @@
 #PrintLastLog yes
 #KeepAlive yes
 #UseLogin no
-#UsePrivilegeSeparation no
+#UsePrivilegeSeparation yes
+#Compression yes
 
 #MaxStartups 10
 # no default banner path

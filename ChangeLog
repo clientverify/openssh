@@ -1,6 +1,9 @@
    - markus@cvs.openbsd.org 2002/06/20 23:05:56
      [servconf.c servconf.h session.c sshd.c]
      allow Compression=yes/no in sshd_config
+   - markus@cvs.openbsd.org 2002/06/20 23:37:12
+     [sshd_config]
+     add Compression
 20020515
  - (bal) CVS ID fix up on auth-passwd.c
  - (bal) OpenBSD CVS Sync

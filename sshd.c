@@ -1749,6 +1749,10 @@ do_ssh2_kex(void)
 		myproposal[PROPOSAL_MAC_ALGS_CTOS] =
 		myproposal[PROPOSAL_MAC_ALGS_STOC] = options.macs;
 	}
+	if (!options.compression) {
+		myproposal[PROPOSAL_COMP_ALGS_CTOS] =
+		myproposal[PROPOSAL_COMP_ALGS_STOC] = "none";
+	}
 	myproposal[PROPOSAL_SERVER_HOST_KEY_ALGS] = list_hostkey_types();
 
 	/* start key exchange */

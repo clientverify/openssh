@@ -192,6 +192,10 @@ do_authenticated1(Authctxt *authctxt)
 				    compression_level);
 				break;
 			}
+			if (!options.compression) {
+				debug2("compression disabled");
+				break;
+			}
 			/* Enable compression after we have responded with SUCCESS. */
 			enable_compression_after_reply = 1;
 			success = 1;

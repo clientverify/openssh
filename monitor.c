@@ -301,8 +301,10 @@ monitor_child_postauth(struct monitor *pmonitor)
 void
 monitor_sync(struct monitor *pmonitor)
 {
-	/* The member allocation is not visible, so sync it */
-	mm_share_sync(&pmonitor->m_zlib, &pmonitor->m_zback);
+	if (options.compression) {
+		/* The member allocation is not visible, so sync it */
+		mm_share_sync(&pmonitor->m_zlib, &pmonitor->m_zback);
+	}
 }
 
 int
@@ -1271,7 +1273,8 @@ monitor_apply_keystate(struct monitor *pmonitor)
 	    sizeof(outgoing_stream));
 
 	/* Update with new address */
-	mm_init_compression(pmonitor->m_zlib);
+	if (options.compression)
+		mm_init_compression(pmonitor->m_zlib);
 
 	/* Network I/O buffers */
 	/* XXX inefficient for large buffers, need: buffer_init_from_string */
@@ -1450,11 +1453,13 @@ monitor_init(void)
 	mon->m_sendfd = pair[1];
 
 	/* Used to share zlib space across processes */
-	mon->m_zback = mm_create(NULL, MM_MEMSIZE);
-	mon->m_zlib = mm_create(mon->m_zback, 20 * MM_MEMSIZE);
+	if (options.compression) {
+		mon->m_zback = mm_create(NULL, MM_MEMSIZE);
+		mon->m_zlib = mm_create(mon->m_zback, 20 * MM_MEMSIZE);
 
-	/* Compression needs to share state across borders */
-	mm_init_compression(mon->m_zlib);
+		/* Compression needs to share state across borders */
+		mm_init_compression(mon->m_zlib);
+	}
 
 	return mon;
 }

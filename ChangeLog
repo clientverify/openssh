@@ -1,3 +1,9 @@
++20020621
+ - (djm) Sync:
+   - djm@cvs.openbsd.org 2002/06/21 05:50:51
+     [monitor.c]
+     Don't initialise compression buffers when compression=no in sshd_config;
+     ok Niels@
    - markus@cvs.openbsd.org 2002/06/20 23:05:56
      [servconf.c servconf.h session.c sshd.c]
      allow Compression=yes/no in sshd_config

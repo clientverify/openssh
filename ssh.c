@@ -519,7 +519,9 @@ main(int ac, char **av)
 	char *conn_hash_hex;
 
 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
+#ifndef KLEE
 	sanitise_stdfd();
+#endif
 
 	__progname = ssh_get_progname(av[0]);
 
@@ -538,7 +540,9 @@ main(int ac, char **av)
 	 * Discard other fds that are hanging around. These can cause problem
 	 * with backgrounded ssh processes started by ControlPersist.
 	 */
+#ifndef KLEE
 	closefrom(STDERR_FILENO + 1);
+#endif
 
 	/*
 	 * Save the original real uid.  It will be needed later (uid-swapping

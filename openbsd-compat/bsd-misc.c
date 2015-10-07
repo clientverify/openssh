@@ -31,6 +31,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef KLEE
+#undef HAVE___PROGNAME
+#endif
+
 #ifndef HAVE___PROGNAME
 char *__progname;
 #endif

@@ -1,0 +1,34 @@
+# Object files
+*.o
+
+# Compilation products
+*.out
+*.a
+openssh.xml
+opensshd.init
+scp
+sftp
+sftp-server
+ssh
+ssh-add
+ssh-agent
+ssh-keygen
+ssh-keyscan
+ssh-keysign
+ssh-pkcs11-helper
+sshd
+survey.sh
+regress/
+
+# autoconf generated directories and files
+autom4te.cache/
+buildpkg.sh
+config.h
+config.h.in
+config.log
+config.status
+configure
+Makefile
+
+# LLVM/Klee/Cliver files
+.*.bc

@@ -571,34 +571,10 @@ main(int ac, char **av)
 #endif
 	/* Get user data. */
 	pw = getpwuid(original_real_uid);
-#ifdef KLEE
-	if (!pw) {
-		// WARNING: This may run incorrectly if these do not match your user
-		// information. Run 'id' on the command line or inspect /etc/passwd, and
-		// modify these to match your uid/gid information.
-		struct passwd hardcoded_pw;
-		pw = &hardcoded_pw;
-		pw->pw_name = "buildbot";
-		pw->pw_passwd = "x";
-		pw->pw_uid = 1000;
-		pw->pw_gid = 1000;
-		pw->pw_gecos = ",,,";
-		pw->pw_dir = "/home/buildbot";
-		pw->pw_shell = "/bin/bash";
-	}
-	printf("pw->pw_name = %s\n", pw->pw_name);
-	printf("pw->pw_passwd = %s\n", pw->pw_passwd);
-	printf("pw->pw_uid = %d\n", pw->pw_uid);
-	printf("pw->pw_gid = %d\n", pw->pw_gid);
-	printf("pw->pw_gecos = %s\n", pw->pw_gecos);
-	printf("pw->pw_dir = %s\n", pw->pw_dir);
-	printf("pw->pw_shell = %s\n", pw->pw_shell);
-#else
 	if (!pw) {
 		logit("No user exists for uid %lu", (u_long)original_real_uid);
 		exit(255);
 	}
-#endif
 	/* Take a copy of the returned structure. */
 	pw = pwcopy(pw);
 

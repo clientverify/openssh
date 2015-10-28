@@ -43,14 +43,16 @@ int ktest_ssh_timeout_connect(int sockfd, const struct sockaddr *serv_addr,
       ktest_sockfd = sockfd; // record the socket descriptor of interest
       ret = timeout_connect(sockfd, serv_addr, addrlen, timeoutp);
       if (KTEST_DEBUG) {
-        fprintf(stderr, "timeout_connect() called on socket (%d)\n", sockfd);
+        fprintf(stderr,
+            "KTEST: timeout_connect() called on socket (%d)\n", sockfd);
       }
       return ret;
   }
   else if (ktest_mode == KTEST_PLAYBACK) {
       ktest_sockfd = sockfd; // record the socket descriptor of interest
       if (KTEST_DEBUG) {
-        fprintf(stderr, "timeout_connect() called on socket (%d)\n", sockfd);
+        fprintf(stderr,
+            "KTEST: timeout_connect() called on socket (%d)\n", sockfd);
       }
       return 0; // assume success
   }

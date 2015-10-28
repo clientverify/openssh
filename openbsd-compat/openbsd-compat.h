@@ -189,7 +189,11 @@ void arc4random_stir(void);
 #endif /* !HAVE_ARC4RANDOM */
 
 #ifndef HAVE_ARC4RANDOM_BUF
+#ifdef WITH_KTEST
+#undef arc4random_buf
 void arc4random_buf(void *, size_t);
+#define arc4random_buf ktest_ssh_arc4random_buf
+#endif // WITH_KTEST
 #endif
 
 #ifndef HAVE_ARC4RANDOM_UNIFORM

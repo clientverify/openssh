@@ -23,6 +23,10 @@
 extern "C" {
 #endif
 
+void ktest_ssh_arc4random_buf(void *buf, size_t n);
+#define arc4random_buf ktest_ssh_arc4random_buf
+
+
   /*
   // Network capture for Cliver
   int ktest_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);

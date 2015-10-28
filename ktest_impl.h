@@ -46,7 +46,7 @@ void KTOV_append(KTestObjectVector *ov, const char *name, int num_bytes,
     const void *bytes);
 KTestObject* KTOV_next_object(KTestObjectVector *ov, const char *name);
 void print_fd_set(int nfds, fd_set *fds);
-
+void fprintf_bytes(FILE *stream, const void *buf, int num_bytes);
 #ifdef __cplusplus
 }
 #endif

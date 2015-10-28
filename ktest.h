@@ -21,11 +21,12 @@
 extern "C" {
 #endif
 
-#define KTEST_DEBUG 0
 #define KTEST_VERSION 4 // Cliver-specific (incompatible with normal klee)
 #define KTEST_MAGIC_SIZE 5
 #define KTEST_MAGIC "KTEST"
 #define BOUT_MAGIC "BOUT\n" // for compatibility
+
+extern int KTEST_DEBUG;
 
 // override inline assembly version of FD_ZERO from
 // /usr/include/x86_64-linux-gnu/bits/select.h

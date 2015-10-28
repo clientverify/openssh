@@ -233,6 +233,9 @@ arc4random(void)
 	return val;
 }
 
+#ifdef WITH_KTEST
+#undef arc4random_buf
+
 /*
  * If we are providing arc4random, then we can provide a more efficient 
  * arc4random_buf().
@@ -266,6 +269,9 @@ arc4random_buf(void *_buf, size_t n)
 	explicit_bzero(&r, sizeof(r));
 }
 #endif /* !defined(HAVE_ARC4RANDOM_BUF) && defined(HAVE_ARC4RANDOM) */
+
+#define arc4random_buf ktest_ssh_arc4random_buf
+#endif // WITH_KTEST
 
 #ifndef HAVE_ARC4RANDOM_UNIFORM
 /*

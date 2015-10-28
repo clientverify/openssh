@@ -179,4 +179,8 @@
 
 #include "entropy.h"
 
+#ifdef WITH_KTEST
+#include "ktest_ssh.h"
+#endif
+
 #endif /* INCLUDES_H */

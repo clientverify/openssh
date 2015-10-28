@@ -746,6 +746,10 @@ main(int ac, char **av)
 				debug_flag = 1;
 				options.log_level = SYSLOG_LEVEL_DEBUG1;
 			} else {
+#ifdef WITH_KTEST
+        if (options.log_level == SYSLOG_LEVEL_DEBUG3)
+          KTEST_DEBUG = 1;
+#endif
 				if (options.log_level < SYSLOG_LEVEL_DEBUG3)
 					options.log_level++;
 			}

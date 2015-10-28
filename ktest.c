@@ -186,6 +186,8 @@ static void KTOV_print(FILE *f, const KTestObjectVector *ov) {
 // Exported functionality
 ///////////////////////////////////////////////////////////////////////////////
 
+int KTEST_DEBUG = 0; // verbose output flag
+
 KTestObjectVector ktov;  // contains network, time, and prng captures
 enum kTestMode ktest_mode = KTEST_NONE;
 const char *ktest_output_file = "s_client.ktest";
@@ -502,7 +504,8 @@ KTestObject* KTOV_next_object(KTestObjectVector *ov, const char *name)
   return o;
 }
 
-void print_fd_set(int nfds, fd_set *fds) {
+void print_fd_set(int nfds, fd_set *fds)
+{
   int i;
   for (i = 0; i < nfds; i++) {
     printf(" %d", FD_ISSET(i, fds));
@@ -510,3 +513,16 @@ void print_fd_set(int nfds, fd_set *fds) {
   printf("\n");
 }
 
+void fprintf_bytes(FILE *stream, const void *buf_, int num_bytes)
+{
+  int i;
+  unsigned char *buf = (unsigned char *)buf_;
+  if (buf == NULL) {
+    fprintf(stream, "(null)");
+    return;
+  }
+  for (i = 0; i < num_bytes; i++) {
+    fprintf(stream, "%s%2.2x", (i>0?" ":""), buf[i]);
+  }
+  fprintf(stream, "\n");
+}

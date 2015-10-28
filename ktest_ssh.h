@@ -26,10 +26,11 @@ extern "C" {
 void ktest_ssh_arc4random_buf(void *buf, size_t n);
 #define arc4random_buf ktest_ssh_arc4random_buf
 
+int ktest_ssh_timeout_connect(int sockfd, const struct sockaddr *serv_addr,
+    socklen_t addrlen, int *timeoutp);
 
   /*
   // Network capture for Cliver
-  int ktest_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
   int ktest_select(int nfds, fd_set *readfds, fd_set *writefds,
 		  fd_set *exceptfds, struct timeval *timeout);
   ssize_t ktest_writesocket(int fd, const void *buf, size_t count);
@@ -37,13 +38,6 @@ void ktest_ssh_arc4random_buf(void *buf, size_t n);
 
   // stdin capture for Cliver
   int ktest_raw_read_stdin(void *buf, int siz);
-
-  // Random number generator capture for Cliver
-  int ktest_RAND_bytes(unsigned char *buf, int num);
-  int ktest_RAND_pseudo_bytes(unsigned char *buf, int num);
-
-  // Time capture for Cliver (actually unnecessary!)
-  time_t ktest_time(time_t *t);
 
   // TLS Master Secret capture for Cliver
   void ktest_master_secret(unsigned char *ms, int len);

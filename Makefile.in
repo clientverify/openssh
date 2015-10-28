@@ -92,11 +92,12 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	kex.o kexdh.o kexgex.o kexecdh.o kexc25519.o \
 	kexdhc.o kexgexc.o kexecdhc.o kexc25519c.o \
 	kexdhs.o kexgexs.o kexecdhs.o kexc25519s.o \
-	ktest.o ktest_ssh.o
+	ktest.o ktest_libssh.o
 
 SSHOBJS= ssh.o readconf.o clientloop.o sshtty.o \
 	sshconnect.o sshconnect1.o sshconnect2.o mux.o \
-	roaming_common.o roaming_client.o
+	roaming_common.o roaming_client.o \
+	ktest_sshclient.o
 
 SSHDOBJS=sshd.o auth-rhosts.o auth-passwd.o auth-rsa.o auth-rh-rsa.o \
 	audit.o audit-bsm.o audit-linux.o platform.o \

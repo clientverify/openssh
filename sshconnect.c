@@ -328,7 +328,11 @@ ssh_create_socket(int privileged, struct addrinfo *ai)
 	return sock;
 }
 
+#ifdef WITH_KTEST
+int
+#else
 static int
+#endif // WITH_KTEST
 timeout_connect(int sockfd, const struct sockaddr *serv_addr,
     socklen_t addrlen, int *timeoutp)
 {
@@ -463,8 +467,13 @@ ssh_connect_direct(const char *host, struct addrinfo *aitop,
 				/* Any error is already output */
 				continue;
 
+#ifdef WITH_KTEST
+      if (ktest_ssh_timeout_connect(sock, ai->ai_addr, ai->ai_addrlen,
+			    timeout_ms) >= 0) {
+#else
 			if (timeout_connect(sock, ai->ai_addr, ai->ai_addrlen,
 			    timeout_ms) >= 0) {
+#endif
 				/* Successful connection. */
 				memcpy(hostaddr, ai->ai_addr, ai->ai_addrlen);
 				break;

@@ -1,4 +1,4 @@
-//===-- KTest.cpp ---------------------------------------------------------===//
+//===-- ktest.c -----------------------------------------------------------===//
 //
 //                     The KLEE Symbolic Virtual Machine
 //
@@ -9,12 +9,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "KTest.h"
-
-#include <openssl/rand.h>
-#undef RAND_bytes
-#undef RAND_pseudo_bytes
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -23,24 +17,13 @@
 #include <assert.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <time.h>
 
-#define KTEST_VERSION 4 // Cliver-specific (incompatible with normal klee)
-#define KTEST_MAGIC_SIZE 5
-#define KTEST_MAGIC "KTEST"
+#include "ktest_impl.h"
 
-// for compatibility reasons
-#define BOUT_MAGIC "BOUT\n"
-
-#define KTEST_DEBUG 0
-
-// override inline assembly version of FD_ZERO from
-// /usr/include/x86_64-linux-gnu/bits/select.h
-#ifdef FD_ZERO
-#undef FD_ZERO
-#endif
-#define FD_ZERO(p)        memset((char *)(p), 0, sizeof(*(p)))
-
-/***/
+///////////////////////////////////////////////////////////////////////////////
+// Local to this file
+///////////////////////////////////////////////////////////////////////////////
 
 static int read_uint32(FILE *f, unsigned *value_out) {
   unsigned char data[4];
@@ -102,14 +85,6 @@ static int write_string(FILE *f, const char *value) {
   return 1;
 }
 
-/***/
-
-
-unsigned kTest_getCurrentVersion() {
-  return KTEST_VERSION;
-}
-
-
 static int kTest_checkHeader(FILE *f) {
   char header[KTEST_MAGIC_SIZE];
   if (fread(header, KTEST_MAGIC_SIZE, 1, f)!=1)
@@ -118,6 +93,109 @@ static int kTest_checkHeader(FILE *f) {
       memcmp(header, BOUT_MAGIC, KTEST_MAGIC_SIZE))
     return 0;
   return 1;
+}
+
+// KTOV = "KTestObjectVector"
+static void KTOV_init(KTestObjectVector *ov) {
+  memset(ov, 0, sizeof(*ov));
+}
+
+static void KTOV_done(KTestObjectVector *ov) {
+  if (ov && (ov->objects)) {
+    int i;
+    for (i = 0; i < ov->size; i++) {
+      free(ov->objects[i].name);
+      if (ov->objects[i].bytes != NULL) {
+        free(ov->objects[i].bytes);
+      }
+    }
+    free(ov->objects);
+  }
+  memset(ov, 0, sizeof(*ov));
+}
+
+static void KTOV_check_mem(KTestObjectVector *ov) {
+  if (ov->size + 1 > ov->capacity) {
+    size_t new_capacity = (ov->size + 1)*2;
+    ov->objects = (KTestObject*) realloc(ov->objects,
+        sizeof(KTestObject) * new_capacity);
+    if (!ov->objects) {
+      perror("KTOV_check_mem error");
+      exit(1);
+    }
+    ov->capacity = new_capacity;
+  }
+}
+
+static void timeval2str(char *out, int outlen, const struct timeval *tv) {
+  time_t nowtime;
+  struct tm *nowtm;
+  char tmbuf[64];
+
+  nowtime = tv->tv_sec;
+  nowtm = localtime(&nowtime);
+  strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
+  snprintf(out, outlen, "%s.%06ld", tmbuf, tv->tv_usec);
+}
+
+// Print hex and ascii side-by-side
+static void KTO_print(FILE *f, const KTestObject *o) {
+  unsigned int i, j;
+  const unsigned int WIDTH = 16;
+  char timebuf[64];
+
+  timeval2str(timebuf, sizeof(timebuf), &o->timestamp);
+  fprintf(f, "%s | ", timebuf);
+  fprintf(f, "%s [%u]\n", o->name, o->numBytes);
+  for (i = 0; WIDTH*i <  o->numBytes; i++) {
+    for (j = 0; j < 16 && WIDTH*i+j < o->numBytes; j++) {
+      fprintf(f, " %2.2x", o->bytes[WIDTH*i+j]);
+    }
+    for (; j < 17; j++) {
+      fprintf(f, "   ");
+    }
+    for (j = 0; j < 16 && WIDTH*i+j < o->numBytes; j++) {
+      unsigned char c = o->bytes[WIDTH*i+j];
+      fprintf(f, "%c", isprint(c)?c:'.');
+    }
+    fprintf(f, "\n");
+  }
+  fprintf(f, "\n");
+}
+
+// Deep copy of KTestObject
+static void KTO_deepcopy(KTestObject *dest, KTestObject *src) {
+  dest->name = strdup(src->name);
+  dest->timestamp = src->timestamp;
+  dest->numBytes = src->numBytes;
+  dest->bytes = (unsigned char*)malloc(sizeof(unsigned char)*src->numBytes);
+  memcpy(dest->bytes, src->bytes, src->numBytes);
+}
+
+static void KTOV_print(FILE *f, const KTestObjectVector *ov) {
+  int i;
+  fprintf(f, "KTestObjectVector of size %d and capacity %d:\n\n",
+      ov->size, ov->capacity);
+  for (i = 0; i < ov->size; i++) {
+    fprintf(f, "#%d: ", i);
+    KTO_print(f, &ov->objects[i]);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Exported functionality
+///////////////////////////////////////////////////////////////////////////////
+
+KTestObjectVector ktov;  // contains network, time, and prng captures
+enum kTestMode ktest_mode = KTEST_NONE;
+const char *ktest_output_file = "s_client.ktest";
+const char *ktest_network_file = "s_client.net.ktest";
+int ktest_sockfd = -1; // descriptor of the socket we're capturing
+
+//// The following existed in KLEE, but are possibly modified in Cliver
+
+unsigned kTest_getCurrentVersion() {
+  return KTEST_VERSION;
 }
 
 int kTest_isKTestFile(const char *path) {
@@ -290,169 +368,7 @@ void kTest_free(KTest *bo) {
   free(bo);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Local to this file
-///////////////////////////////////////////////////////////////////////////////
-
-typedef struct KTestObjectVector {
-  KTestObject *objects;
-  int size;
-  int capacity; // capacity >= size
-  int playback_index; // starts at 0
-} KTestObjectVector;
-
-// KTOV = "KTestObjectVector"
-static void KTOV_init(KTestObjectVector *ov) {
-  memset(ov, 0, sizeof(*ov));
-}
-
-static void KTOV_done(KTestObjectVector *ov) {
-  if (ov && (ov->objects)) {
-    int i;
-    for (i = 0; i < ov->size; i++) {
-      free(ov->objects[i].name);
-      if (ov->objects[i].bytes != NULL) {
-        free(ov->objects[i].bytes);
-      }
-    }
-    free(ov->objects);
-  }
-  memset(ov, 0, sizeof(*ov));
-}
-
-static void KTOV_check_mem(KTestObjectVector *ov) {
-  if (ov->size + 1 > ov->capacity) {
-    size_t new_capacity = (ov->size + 1)*2;
-    ov->objects = (KTestObject*) realloc(ov->objects,
-        sizeof(KTestObject) * new_capacity);
-    if (!ov->objects) {
-      perror("KTOV_check_mem error");
-      exit(1);
-    }
-    ov->capacity = new_capacity;
-  }
-}
-
-static void timeval2str(char *out, int outlen, const struct timeval *tv) {
-  time_t nowtime;
-  struct tm *nowtm;
-  char tmbuf[64];
-
-  nowtime = tv->tv_sec;
-  nowtm = localtime(&nowtime);
-  strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", nowtm);
-  snprintf(out, outlen, "%s.%06ld", tmbuf, tv->tv_usec);
-}
-
-// Print hex and ascii side-by-side
-static void KTO_print(FILE *f, const KTestObject *o) {
-  unsigned int i, j;
-  const unsigned int WIDTH = 16;
-  char timebuf[64];
-
-  timeval2str(timebuf, sizeof(timebuf), &o->timestamp);
-  fprintf(f, "%s | ", timebuf);
-  fprintf(f, "%s [%u]\n", o->name, o->numBytes);
-  for (i = 0; WIDTH*i <  o->numBytes; i++) {
-    for (j = 0; j < 16 && WIDTH*i+j < o->numBytes; j++) {
-      fprintf(f, " %2.2x", o->bytes[WIDTH*i+j]);
-    }
-    for (; j < 17; j++) {
-      fprintf(f, "   ");
-    }
-    for (j = 0; j < 16 && WIDTH*i+j < o->numBytes; j++) {
-      unsigned char c = o->bytes[WIDTH*i+j];
-      fprintf(f, "%c", isprint(c)?c:'.');
-    }
-    fprintf(f, "\n");
-  }
-  fprintf(f, "\n");
-}
-
-// Deep copy of KTestObject
-static void KTO_deepcopy(KTestObject *dest, KTestObject *src) {
-  dest->name = strdup(src->name);
-  dest->timestamp = src->timestamp;
-  dest->numBytes = src->numBytes;
-  dest->bytes = (unsigned char*)malloc(sizeof(unsigned char)*src->numBytes);
-  memcpy(dest->bytes, src->bytes, src->numBytes);
-}
-
-static void KTOV_print(FILE *f, const KTestObjectVector *ov) {
-  int i;
-  fprintf(f, "KTestObjectVector of size %d and capacity %d:\n\n",
-      ov->size, ov->capacity);
-  for (i = 0; i < ov->size; i++) {
-    fprintf(f, "#%d: ", i);
-    KTO_print(f, &ov->objects[i]);
-  }
-}
-
-static void KTOV_append(KTestObjectVector *ov,
-    const char *name,
-    int num_bytes,
-    const void *bytes)
-{
-  int i;
-  assert(ov != NULL);
-  assert(name != NULL);
-  assert(num_bytes == 0 || bytes != NULL);
-  i = ov->size;
-  KTOV_check_mem(ov); // allocate more memory if necessary
-  ov->objects[i].name = strdup(name);
-  ov->objects[i].numBytes = num_bytes;
-  ov->objects[i].bytes = NULL;
-  gettimeofday(&ov->objects[i].timestamp, NULL);
-  if (num_bytes > 0) {
-    ov->objects[i].bytes =
-      (unsigned char*)malloc(sizeof(unsigned char)*num_bytes);
-    memcpy(ov->objects[i].bytes, bytes, num_bytes);
-  }
-  ov->size++;
-  // KTO_print(stdout, &ov->objects[i]);
-}
-
-static KTestObject* KTOV_next_object(KTestObjectVector *ov, const char *name)
-{
-  if (ov->playback_index >= ov->size) {
-    fprintf(stderr, "ERROR: ktest playback %s - no more recorded events", name);
-    exit(2);
-  }
-  KTestObject *o = &ov->objects[ov->playback_index];
-  if (strcmp(o->name, name) != 0) {
-    fprintf(stderr,
-        "ERROR: ktest playback needed '%s', but recording had '%s'\n",
-        name, o->name);
-    exit(2);
-  }
-  ov->playback_index++;
-  return o;
-}
-
-static void print_fd_set(int nfds, fd_set *fds) {
-  int i;
-  for (i = 0; i < nfds; i++) {
-    printf(" %d", FD_ISSET(i, fds));
-  }
-  printf("\n");
-}
-
-enum { CLIENT_TO_SERVER=0, SERVER_TO_CLIENT, RNG, PRNG, TIME, STDIN, SELECT,
-  MASTER_SECRET };
-static char* ktest_object_names[] = {
-  "c2s", "s2c", "rng", "prng", "time", "stdin", "select", "master_secret"
-};
-
-static KTestObjectVector ktov;  // contains network, time, and prng captures
-static enum kTestMode ktest_mode = KTEST_NONE;
-static const char *ktest_output_file = "s_client.ktest";
-static const char *ktest_network_file = "s_client.net.ktest";
-static int ktest_sockfd = -1; // descriptor of the socket we're capturing
-
-///////////////////////////////////////////////////////////////////////////////
-// Exported functionality
-///////////////////////////////////////////////////////////////////////////////
-
+///// The following functions are new to Cliver
 
 void ktest_start(const char *filename, enum kTestMode mode) {
   KTOV_init(&ktov);
@@ -545,7 +461,52 @@ void ktest_finish() {
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// OpenSSH specific capture
-///////////////////////////////////////////////////////////////////////////////
+void KTOV_append(KTestObjectVector *ov,
+    const char *name,
+    int num_bytes,
+    const void *bytes)
+{
+  int i;
+  assert(ov != NULL);
+  assert(name != NULL);
+  assert(num_bytes == 0 || bytes != NULL);
+  i = ov->size;
+  KTOV_check_mem(ov); // allocate more memory if necessary
+  ov->objects[i].name = strdup(name);
+  ov->objects[i].numBytes = num_bytes;
+  ov->objects[i].bytes = NULL;
+  gettimeofday(&ov->objects[i].timestamp, NULL);
+  if (num_bytes > 0) {
+    ov->objects[i].bytes =
+      (unsigned char*)malloc(sizeof(unsigned char)*num_bytes);
+    memcpy(ov->objects[i].bytes, bytes, num_bytes);
+  }
+  ov->size++;
+  // KTO_print(stdout, &ov->objects[i]);
+}
+
+KTestObject* KTOV_next_object(KTestObjectVector *ov, const char *name)
+{
+  if (ov->playback_index >= ov->size) {
+    fprintf(stderr, "ERROR: ktest playback %s - no more recorded events", name);
+    exit(2);
+  }
+  KTestObject *o = &ov->objects[ov->playback_index];
+  if (strcmp(o->name, name) != 0) {
+    fprintf(stderr,
+        "ERROR: ktest playback needed '%s', but recording had '%s'\n",
+        name, o->name);
+    exit(2);
+  }
+  ov->playback_index++;
+  return o;
+}
+
+void print_fd_set(int nfds, fd_set *fds) {
+  int i;
+  for (i = 0; i < nfds; i++) {
+    printf(" %d", FD_ISSET(i, fds));
+  }
+  printf("\n");
+}
 

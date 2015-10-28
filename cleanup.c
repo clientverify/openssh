@@ -24,9 +24,16 @@
 
 #include "log.h"
 
+#ifdef CLIVER
+#include "KTest.h"
+#endif
+
 /* default implementation */
 void
 cleanup_exit(int i)
 {
-	_exit(i);
+#ifdef CLIVER
+  ktest_finish();
+#endif
+  _exit(i);
 }

@@ -114,6 +114,12 @@
 #include "ssh-pkcs11.h"
 #endif
 
+#ifdef WITH_KTEST
+#include "KTest.h"
+static const char *arg_ktest_filename = NULL;
+static enum kTestMode arg_ktest_mode = KTEST_NONE;
+#endif
+
 extern char *__progname;
 
 /* Saves a copy of argv for setproctitle emulation */
@@ -208,7 +214,11 @@ usage(void)
 "           [-O ctl_cmd] [-o option] [-p port]\n"
 "           [-Q cipher | cipher-auth | mac | kex | key]\n"
 "           [-R address] [-S ctl_path] [-W host:port]\n"
-"           [-w local_tun[:remote_tun]] [user@]hostname [command]\n"
+"           [-w local_tun[:remote_tun]] "
+#ifdef WITH_KTEST
+"\n           [-z ktestfile] [-Z ktestfile] "
+#endif
+"[user@]hostname [command]\n"
 	);
 	exit(255);
 }
@@ -602,7 +612,7 @@ main(int ac, char **av)
 
  again:
 	while ((opt = getopt(ac, av, "1246ab:c:e:fgi:kl:m:no:p:qstvx"
-	    "ACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy")) != -1) {
+	    "ACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYyZ:z:")) != -1) {
 		switch (opt) {
 		case '1':
 			options.protocol = SSH_PROTO_1;
@@ -913,7 +923,17 @@ main(int ac, char **av)
 		case 'F':
 			config = optarg;
 			break;
-		default:
+#ifdef WITH_KTEST
+		case 'z':
+			arg_ktest_filename = optarg;
+			arg_ktest_mode = KTEST_RECORD;
+			break;
+		case 'Z':
+			arg_ktest_filename = optarg;
+			arg_ktest_mode = KTEST_PLAYBACK;
+			break;
+#endif // WITH_KTEST
+    default:
 			usage();
 		}
 	}
@@ -944,6 +964,10 @@ main(int ac, char **av)
 		usage();
 
 	host_arg = xstrdup(host);
+
+#ifdef WITH_KTEST
+	ktest_start(arg_ktest_filename, arg_ktest_mode);
+#endif
 
 #ifdef WITH_OPENSSL
 	OpenSSL_add_all_algorithms();
@@ -1369,6 +1393,9 @@ main(int ac, char **av)
 	/* Kill ProxyCommand if it is running. */
 	ssh_kill_proxy_command();
 
+#ifdef WITH_KTEST
+	ktest_finish();
+#endif
 	return exit_status;
 }
 

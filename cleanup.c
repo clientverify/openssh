@@ -25,7 +25,7 @@
 #include "log.h"
 
 #ifdef CLIVER
-#include "KTest.h"
+#include "ktest.h"
 #endif
 
 /* default implementation */

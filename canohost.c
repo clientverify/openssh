@@ -94,7 +94,11 @@ get_remote_hostname(int sock, int use_dns)
 	if (getaddrinfo(name, NULL, &hints, &ai) == 0) {
 		logit("Nasty PTR record \"%s\" is set up for %s, ignoring",
 		    name, ntop);
-		freeaddrinfo(ai);
+#ifdef CLIVER
+        ktest_freeaddrinfo(ai);
+#else
+        freeaddrinfo(ai);
+#endif
 		return xstrdup(ntop);
 	}
 
@@ -125,7 +129,12 @@ get_remote_hostname(int sock, int use_dns)
 		    (strcmp(ntop, ntop2) == 0))
 				break;
 	}
-	freeaddrinfo(aitop);
+#ifdef CLIVER
+    ktest_freeaddrinfo(aitop);
+#else
+    freeaddrinfo(aitop);
+#endif
+
 	/* If we reached the end of the list, the address was not there. */
 	if (!ai) {
 		/* Address not found for the host name. */

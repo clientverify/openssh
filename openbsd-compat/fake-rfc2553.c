@@ -106,6 +106,7 @@ gai_strerror(int err)
 #endif /* !HAVE_GAI_STRERROR */
 
 #ifndef HAVE_FREEADDRINFO
+#ifndef CLIVER
 void
 freeaddrinfo(struct addrinfo *ai)
 {
@@ -117,6 +118,7 @@ freeaddrinfo(struct addrinfo *ai)
 		ai = next;
 	}
 }
+#endif //CLIVER
 #endif /* !HAVE_FREEADDRINFO */
 
 #ifndef HAVE_GETADDRINFO
@@ -217,7 +219,11 @@ getaddrinfo(const char *hostname, const char *servname,
 			cur = malloc_ai(port, in->s_addr, hints);
 			if (cur == NULL) {
 				if (*res != NULL)
-					freeaddrinfo(*res);
+#ifdef CLIVER
+                    ktest_freeaddrinfo(*res);
+#else
+                    freeaddrinfo(*res);
+#endif
 				return (EAI_MEMORY);
 			}
 			if (prev)

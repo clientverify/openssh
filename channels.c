@@ -2957,7 +2957,11 @@ channel_setup_fwd_listener_tcpip(int type, struct Forward *fwd,
 	if (success == 0)
 		error("%s: cannot listen to port: %d", __func__,
 		    fwd->listen_port);
-	freeaddrinfo(aitop);
+#ifdef CLIVER
+        ktest_freeaddrinfo(aitop);
+#else
+        freeaddrinfo(aitop);
+#endif
 	return success;
 }
 
@@ -3689,7 +3693,11 @@ channel_connect_ctx_free(struct channel_connect *cctx)
 		if (cctx->aitop->ai_family == AF_UNIX)
 			free(cctx->aitop);
 		else
-			freeaddrinfo(cctx->aitop);
+#ifdef CLIVER
+            ktest_freeaddrinfo(cctx->aitop);
+#else
+            freeaddrinfo(cctx->aitop);
+#endif
 	}
 	memset(cctx, 0, sizeof(*cctx));
 }
@@ -3927,7 +3935,12 @@ x11_create_display_inet(int x11_display_offset, int x11_use_localhost,
 #endif 
 				    ) {
 					error("socket: %.100s", strerror(errno));
-					freeaddrinfo(aitop);
+#ifdef CLIVER
+                    ktest_freeaddrinfo(aitop);
+#else
+                    freeaddrinfo(aitop);
+#endif
+
 					return -1;
 				} else {
 					debug("x11_create_display_inet: Socket family %d not supported",
@@ -3953,7 +3966,11 @@ x11_create_display_inet(int x11_display_offset, int x11_use_localhost,
 			if (num_socks == NUM_SOCKS)
 				break;
 		}
-		freeaddrinfo(aitop);
+#ifdef CLIVER
+        ktest_freeaddrinfo(aitop);
+#else
+        freeaddrinfo(aitop);
+#endif
 		if (num_socks > 0)
 			break;
 	}
@@ -4113,7 +4130,12 @@ x11_connect_display(void)
 		/* Success */
 		break;
 	}
-	freeaddrinfo(aitop);
+#ifdef CLIVER
+    ktest_freeaddrinfo(aitop);
+#else
+    freeaddrinfo(aitop);
+#endif
+
 	if (!ai) {
 		error("connect %.100s port %u: %.100s", buf, 6000 + display_number,
 		    strerror(errno));

@@ -679,7 +679,11 @@ remote_connect(const char *host, const char *port, struct addrinfo hints)
 			if (bind(s, (struct sockaddr *)ares->ai_addr,
 			    ares->ai_addrlen) < 0)
 				err(1, "bind failed");
-			freeaddrinfo(ares);
+#ifdef CLIVER
+                ktest_freeaddrinfo(ares);
+#else
+                freeaddrinfo(ares);
+#endif
 		}
 
 		set_common_sockopts(s);
@@ -693,8 +697,11 @@ remote_connect(const char *host, const char *port, struct addrinfo hints)
 		close(s);
 		s = -1;
 	} while ((res0 = res0->ai_next) != NULL);
-
-	freeaddrinfo(res);
+#ifdef CLIVER
+    ktest_freeaddrinfo(res);
+#else
+    freeaddrinfo(res);
+#endif
 
 	return (s);
 }
@@ -791,8 +798,11 @@ local_listen(char *host, char *port, struct addrinfo hints)
 		if (listen(s, 1) < 0)
 			err(1, "listen");
 	}
-
-	freeaddrinfo(res);
+#ifdef CLIVER
+    ktest_freeaddrinfo(res);
+#else
+    freeaddrinfo(res);
+#endif
 
 	return (s);
 }
@@ -1434,11 +1444,19 @@ decode_addrport(const char *h, const char *p, struct sockaddr *addr,
 		return (-1);
 	}
 	if (addrlen < res->ai_addrlen) {
-		freeaddrinfo(res);
+#ifdef CLIVER
+        ktest_freeaddrinfo(res);
+#else
+        freeaddrinfo(res);
+#endif
 		errx(1, "internal error: addrlen < res->ai_addrlen");
 	}
 	memcpy(addr, res->ai_addr, res->ai_addrlen);
-	freeaddrinfo(res);
+#ifdef CLIVER
+    ktest_freeaddrinfo(res);
+#else
+    freeaddrinfo(res);
+#endif
 	return (0);
 }
 

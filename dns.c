@@ -189,7 +189,11 @@ is_numeric_hostname(const char *hostname)
 	hints.ai_flags = AI_NUMERICHOST;
 
 	if (getaddrinfo(hostname, NULL, &hints, &ai) == 0) {
-		freeaddrinfo(ai);
+#ifdef CLIVER
+        ktest_freeaddrinfo(ai);
+#else
+        freeaddrinfo(ai);
+#endif
 		return -1;
 	}
 

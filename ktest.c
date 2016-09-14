@@ -188,6 +188,20 @@ static void KTOV_print(FILE *f, const KTestObjectVector *ov) {
 
 int KTEST_DEBUG = 0; // verbose output flag
 
+//Copied from Bssl's.  Bit of a hack, update both as needed
+int ktest_getaddrinfo(const char *node, const char *service,
+                       const struct addrinfo *hints, struct addrinfo **res){
+     if(ktest_mode == KTEST_PLAYBACK){
+        return getaddrinfo("localhost", service, hints, res);
+     }else{
+        return getaddrinfo(node, service, hints, res);
+     }
+}
+
+void ktest_freeaddrinfo(struct addrinfo *res){
+    freeaddrinfo(res);
+}
+
 KTestObjectVector ktov;  // contains network, time, and prng captures
 enum kTestMode ktest_mode = KTEST_NONE;
 const char *ktest_output_file = "s_client.ktest";

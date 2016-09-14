@@ -344,7 +344,11 @@ tcpconnect(char *host)
 		close(s);
 		s = -1;
 	}
-	freeaddrinfo(aitop);
+#ifdef CLIVER
+    ktest_freeaddrinfo(aitop);
+#else
+    freeaddrinfo(aitop);
+#endif
 	return s;
 }
 

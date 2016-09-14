@@ -260,7 +260,7 @@ resolve_host(const char *name, int port, int logerr, char *cname, size_t clen)
 	int gaierr, loglevel = SYSLOG_LEVEL_DEBUG1;
 
 	if (port <= 0)
-		port = default_ssh_port();
+        port = default_ssh_port();
 
 	snprintf(strport, sizeof strport, "%u", port);
 	memset(&hints, 0, sizeof(hints));
@@ -269,7 +269,11 @@ resolve_host(const char *name, int port, int logerr, char *cname, size_t clen)
 	hints.ai_socktype = SOCK_STREAM;
 	if (cname != NULL)
 		hints.ai_flags = AI_CANONNAME;
+#ifdef CLIVER
+	if ((gaierr = ktest_getaddrinfo(name, strport, &hints, &res)) != 0) {
+#else
 	if ((gaierr = getaddrinfo(name, strport, &hints, &res)) != 0) {
+#endif
 		if (logerr || (gaierr != EAI_NONAME && gaierr != EAI_NODATA))
 			loglevel = SYSLOG_LEVEL_ERROR;
 		do_log2(loglevel, "%s: Could not resolve hostname %.100s: %s",
@@ -302,6 +306,7 @@ resolve_addr(const char *name, int port, char *caddr, size_t clen)
 
 	if (port <= 0)
 		port = default_ssh_port();
+
 	snprintf(strport, sizeof strport, "%u", port);
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = options.address_family == -1 ?
@@ -335,7 +340,11 @@ resolve_addr(const char *name, int port, char *caddr, size_t clen)
 		if (clen > 0)
 			*caddr = '\0';
  fail:
-		freeaddrinfo(res);
+#ifdef CLIVER
+        ktest_freeaddrinfo(res);
+#else
+        freeaddrinfo(res);
+#endif
 		return NULL;
 	}
 	return res;
@@ -580,7 +589,7 @@ main(int ac, char **av)
 	}
 #endif
 	/* Get user data. */
-	pw = getpwuid(original_real_uid);
+    pw = getpwuid(original_real_uid);
 	if (!pw) {
 		logit("No user exists for uid %lu", (u_long)original_real_uid);
 		exit(255);
@@ -1103,6 +1112,7 @@ main(int ac, char **av)
 
 	if (options.port == 0)
 		options.port = default_ssh_port();
+
 	channel_set_af(options.address_family);
 
 	/* Tidy and check options */
@@ -1233,7 +1243,11 @@ main(int ac, char **av)
  		exit(255);
 
 	if (addrs != NULL)
-		freeaddrinfo(addrs);
+#ifdef CLIVER
+        ktest_freeaddrinfo(addrs);
+#else
+        freeaddrinfo(addrs);
+#endif
 
 	packet_set_timeout(options.server_alive_interval,
 	    options.server_alive_count_max);

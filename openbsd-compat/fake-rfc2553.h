@@ -164,8 +164,10 @@ char *gai_strerror(int);
 #endif /* !HAVE_GAI_STRERROR */
 
 #ifndef HAVE_FREEADDRINFO
+#ifndef CLIVER
 #define freeaddrinfo(a)		(ssh_freeaddrinfo(a))
 void freeaddrinfo(struct addrinfo *);
+#endif //CLIVER
 #endif /* !HAVE_FREEADDRINFO */
 
 #ifndef HAVE_GETNAMEINFO

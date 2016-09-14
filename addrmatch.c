@@ -218,11 +218,19 @@ addr_pton(const char *p, struct xaddr *n)
 
 	if (n != NULL &&
 	    addr_sa_to_xaddr(ai->ai_addr, ai->ai_addrlen, n) == -1) {
-		freeaddrinfo(ai);
-		return -1;
+#ifdef CLIVER
+               ktest_freeaddrinfo(ai);
+#else
+               freeaddrinfo(ai);
+#endif
+               return -1;
 	}
+#ifdef CLIVER
+    ktest_freeaddrinfo(ai);
+#else
+    freeaddrinfo(ai);
+#endif
 
-	freeaddrinfo(ai);
 	return 0;
 }
 

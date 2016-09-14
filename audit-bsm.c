@@ -166,8 +166,12 @@ aug_get_machine(char *host, u_int32_t *addr, u_int32_t *type)
 		    host, ai->ai_family);
 		ret = -1;
 	}
-	freeaddrinfo(ai);
-	return ret;
+#ifdef CLIVER
+    ktest_freeaddrinfo(ai);
+#else
+   freeaddrinfo(ai);
+#endif
+    return ret;
 }
 #endif
 

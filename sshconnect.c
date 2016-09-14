@@ -319,12 +319,20 @@ ssh_create_socket(int privileged, struct addrinfo *ai)
 			    strerror(errno));
  fail:
 			close(sock);
-			freeaddrinfo(res);
+#ifdef CLIVER
+             ktest_freeaddrinfo(res);
+#else
+             freeaddrinfo(res);
+#endif
 			return -1;
 		}
 	}
 	if (res != NULL)
-		freeaddrinfo(res);
+#ifdef CLIVER
+        ktest_freeaddrinfo(res);
+#else
+        freeaddrinfo(res);
+#endif
 	return sock;
 }
 

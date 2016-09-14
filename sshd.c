@@ -1211,7 +1211,11 @@ server_listen(void)
 			    ntop, strport, strerror(errno));
 		logit("Server listening on %s port %s.", ntop, strport);
 	}
-	freeaddrinfo(options.listen_addrs);
+#ifdef CLIVER
+    ktest_freeaddrinfo(options.listen_addrs);
+#else
+    freeaddrinfo(options.listen_addrs);
+#endif
 
 	if (!num_listen_socks)
 		fatal("Cannot bind any address.");

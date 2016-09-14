@@ -16,6 +16,10 @@
 #define __KTEST_H__
 
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,8 +39,13 @@ extern int KTEST_DEBUG;
 #endif
 #define FD_ZERO(p)        memset((char *)(p), 0, sizeof(*(p)))
 
-///////////////// KTest struct definitions ///////////////////
+///////////////// KTest replacement functions ///////////////////
+int ktest_getaddrinfo(const char *node, const char *service,
+                       const struct addrinfo *hints, struct addrinfo **res);
 
+void ktest_freeaddrinfo(struct addrinfo *res);
+
+///////////////// KTest struct definitions ///////////////////
 typedef struct KTestObject KTestObject;
 struct KTestObject {
   char *name;

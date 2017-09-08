@@ -698,7 +698,7 @@ AC_CACHE_CHECK([for OpenSSL directory], ac_cv_openssldir, [
 	for ssldir in $tryssldir "" /usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/local /usr/pkg /opt /opt/openssl ; do
 		CPPFLAGS="$saved_CPPFLAGS"
 		LDFLAGS="$saved_LDFLAGS"
-		LIBS="$saved_LIBS -lcrypto"
+		LIBS="$saved_LIBS -Wl,-Bstatic -lcrypto -Wl,-Bdynamic"
 		
 		# Skip directories if they don't exist
 		if test ! -z "$ssldir" -a ! -d "$ssldir" ; then
@@ -789,7 +789,7 @@ if (test ! -z "$ac_cv_openssldir" && test "x$ac_cv_openssldir" != "x(system)") ;
 		fi
 	fi
 fi
-LIBS="$saved_LIBS -lcrypto"
+LIBS="$saved_LIBS -Wl,-Bstatic -lcrypto -Wl,-Bdynamic "
 
 # Now test RSA support
 saved_LIBS="$LIBS"
@@ -837,7 +837,7 @@ else
 		else
 			RSA_MSG="yes (using RSAref)"
 			AC_MSG_RESULT(using RSAref)
-			LIBS="$LIBS -lcrypto -lRSAglue -lrsaref"
+			LIBS="$LIBS -Wl,-Bstatic -lcrypto -lRSAglue -lrsaref -Wl,-Bdynamic"
 		fi
 	fi
 fi

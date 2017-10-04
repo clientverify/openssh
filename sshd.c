@@ -90,6 +90,12 @@ extern char *__progname;
 char *__progname;
 #endif
 
+#ifdef CLIVER
+#include "KTest.h"
+static const char *arg_ktest_filename = NULL;
+static enum kTestMode arg_ktest_mode = KTEST_NONE;
+#endif
+
 /* Server configuration options. */
 ServerOptions options;
 
@@ -553,6 +559,7 @@ usage(void)
 	fprintf(stderr, "sshd version %s\n", SSH_VERSION);
 	fprintf(stderr, "Usage: %s [options]\n", __progname);
 	fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -a file    KTest record and file\n");
 	fprintf(stderr, "  -f file    Configuration file (default %s)\n", _PATH_SERVER_CONFIG_FILE);
 	fprintf(stderr, "  -d         Debugging mode (multiple -d means more debugging)\n");
 	fprintf(stderr, "  -i         Started from inetd\n");
@@ -598,6 +605,7 @@ main(int ac, char **av)
 	int ret, key_used = 0;
 
 	__progname = get_progname(av[0]);
+
 	init_rng();
 
 	/* Save argv. */
@@ -608,7 +616,7 @@ main(int ac, char **av)
 	initialize_server_options(&options);
 
 	/* Parse command-line arguments. */
-	while ((opt = getopt(ac, av, "f:p:b:k:h:g:V:u:o:dDeiqtQ46")) != -1) {
+	while ((opt = getopt(ac, av, "a:f:p:b:k:h:g:V:u:o:dDeiqtQ46")) != -1) {
 		switch (opt) {
 		case '4':
 			IPv4or6 = AF_INET;
@@ -616,6 +624,14 @@ main(int ac, char **av)
 		case '6':
 			IPv4or6 = AF_INET6;
 			break;
+		case 'a':
+#ifdef CLIVER
+		    arg_ktest_mode = KTEST_RECORD;
+ 		    arg_ktest_filename = optarg;
+ 		    ktest_start(arg_ktest_filename, arg_ktest_mode);
+ 		    fprintf(stdout, "Writing to: %s\n", arg_ktest_filename);
+#endif
+            break;
 		case 'f':
 			config_file_name = optarg;
 			break;

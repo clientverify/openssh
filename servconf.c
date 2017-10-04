@@ -390,12 +390,16 @@ add_one_listen_addr(ServerOptions *options, char *addr, u_short port)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = (addr == NULL) ? AI_PASSIVE : 0;
 	snprintf(strport, sizeof strport, "%d", port);
+#ifdef CLIVER
+	if ((gaierr = ktest_getaddrinfo(addr, strport, &hints, &aitop)) != 0)
+#else
 	if ((gaierr = getaddrinfo(addr, strport, &hints, &aitop)) != 0)
+#endif
 		fatal("bad addr or host: %s (%s)",
 		    addr ? addr : "<NULL>",
 		    gai_strerror(gaierr));
 	for (ai = aitop; ai->ai_next; ai = ai->ai_next)
-		;
+               ;
 	ai->ai_next = options->listen_addrs;
 	options->listen_addrs = aitop;
 }

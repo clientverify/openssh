@@ -391,7 +391,11 @@ tcpconnect(char *host)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = IPv4or6;
 	hints.ai_socktype = SOCK_STREAM;
+#ifdef CLIVER
+	if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0)
+#else
 	if ((gaierr = getaddrinfo(host, strport, &hints, &aitop)) != 0)
+#endif
 		fatal("getaddrinfo %s: %s", host, gai_strerror(gaierr));
 	for (ai = aitop; ai; ai = ai->ai_next) {
 		s = socket(ai->ai_family, SOCK_STREAM, 0);

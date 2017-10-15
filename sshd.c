@@ -559,7 +559,10 @@ usage(void)
 	fprintf(stderr, "sshd version %s\n", SSH_VERSION);
 	fprintf(stderr, "Usage: %s [options]\n", __progname);
 	fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -a file    KTest record and file\n");
+#ifdef CLIVER
+    fprintf(stderr, "  -r file    KTest record and file\n");
+    fprintf(stderr, "  -a file    KTest playback and file\n");
+#endif
 	fprintf(stderr, "  -f file    Configuration file (default %s)\n", _PATH_SERVER_CONFIG_FILE);
 	fprintf(stderr, "  -d         Debugging mode (multiple -d means more debugging)\n");
 	fprintf(stderr, "  -i         Started from inetd\n");
@@ -616,7 +619,7 @@ main(int ac, char **av)
 	initialize_server_options(&options);
 
 	/* Parse command-line arguments. */
-	while ((opt = getopt(ac, av, "a:f:p:b:k:h:g:V:u:o:dDeiqtQ46")) != -1) {
+	while ((opt = getopt(ac, av, "a:r:f:p:b:k:h:g:V:u:o:dDeiqtQ46")) != -1) {
 		switch (opt) {
 		case '4':
 			IPv4or6 = AF_INET;
@@ -624,14 +627,20 @@ main(int ac, char **av)
 		case '6':
 			IPv4or6 = AF_INET6;
 			break;
-		case 'a':
 #ifdef CLIVER
+		case 'r':
 		    arg_ktest_mode = KTEST_RECORD;
  		    arg_ktest_filename = optarg;
  		    ktest_start(arg_ktest_filename, arg_ktest_mode);
- 		    fprintf(stdout, "Writing to: %s\n", arg_ktest_filename);
-#endif
+ 		    fprintf(stdout, "Recording to: %s\n", arg_ktest_filename);
             break;
+        case 'a':
+            arg_ktest_mode = KTEST_PLAYBACK;
+ 		    arg_ktest_filename = optarg;
+ 		    ktest_start(arg_ktest_filename, arg_ktest_mode);
+ 		    fprintf(stdout, "Playing back from: %s\n", arg_ktest_filename);
+            break;
+#endif
 		case 'f':
 			config_file_name = optarg;
 			break;
@@ -1264,6 +1273,9 @@ main(int ac, char **av)
 #endif /* USE_PAM */
 
 	packet_close();
+#ifdef CLIVER
+   ktest_finish();
+#endif
 	exit(0);
 }
 

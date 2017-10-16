@@ -112,14 +112,22 @@ testAPI()
 	printf("login_alloc_entry test (no host info):\n");
 
 	/* FIXME fake tty more effectively - this could upset some platforms */
-	li1 = login_alloc_entry((int)getpid(), username, NULL, ttyname(0));
+#ifdef CLIVER
+	li1 = login_alloc_entry((int)ktest_getpid(), username, NULL, ttyname(0));
+#else
+    li1 = login_alloc_entry((int)getpid(), username, NULL, ttyname(0));
+#endif
 	strlcpy(li1->progname, "OpenSSH-logintest", sizeof(li1->progname));
 
 	if (be_verbose)
 		dump_logininfo(li1, "li1");
 
 	printf("Setting host address info for 'localhost' (may call out):\n");
-	if (! (he = gethostbyname("localhost"))) {
+#ifdef CLIVER
+	if (! (he = ktest_gethostbyname("localhost"))) {
+#else
+    if (! (he = gethostbyname("localhost"))) {
+#endif
 		printf("Couldn't set hostname(lookup failed)\n");
 	} else {
 		/* NOTE: this is messy, but typically a program wouldn't have to set
@@ -147,7 +155,11 @@ testAPI()
 	printf("--\n(Should have written errors to stderr)\n");
 
 #ifdef HAVE_TIME_H
-	(void)time(&t0);
+#ifdef CLIVER
+	(void)ktest_time(&t0);
+#else
+    (void)time(&t0);
+#endif
 	strlcpy(s_t0, ctime(&t0), sizeof(s_t0));
 	t1 = login_get_lastlog_time(getuid());
 	strlcpy(s_t1, ctime(&t1), sizeof(s_t1));
@@ -158,7 +170,11 @@ testAPI()
 
 	printf("Performing a login on line %s ", stripline);
 #ifdef HAVE_TIME_H
-	(void)time(&logintime);
+#ifdef CLIVER
+	(void)ktest_time(&logintime);
+#else
+    (void)time(&logintime);
+#endif
 	strlcpy(s_logintime, ctime(&logintime), sizeof(s_logintime));
 	printf("at %d - %s", (int)logintime, s_logintime);
 #endif
@@ -174,7 +190,11 @@ testAPI()
 
 	printf("Performing a logout ");
 #ifdef HAVE_TIME_H
-	(void)time(&logouttime);
+#ifdef CLIVER
+	(void)ktest_time(&logouttime);
+#else
+    (void)time(&logouttime);
+#endif
 	strlcpy(s_logouttime, ctime(&logouttime), sizeof(s_logouttime));
 	printf("at %d - %s", (int)logouttime, s_logouttime);
 #endif

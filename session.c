@@ -610,7 +610,11 @@ do_pre_login(Session *s)
 {
 	socklen_t fromlen;
 	struct sockaddr_storage from;
-	pid_t pid = getpid();
+#ifdef CLIVER
+	pid_t pid = ktest_getpid();
+#else
+    pid_t pid = getpid();
+#endif
 
 	/*
 	 * Get IP address of client. If the connection is not a socket, let
@@ -664,7 +668,11 @@ do_login(Session *s, const char *command)
 	struct sockaddr_storage from;
 	time_t last_login_time;
 	struct passwd * pw = s->pw;
-	pid_t pid = getpid();
+#ifdef CLIVER
+	pid_t pid = ktest_getpid();
+#else
+    pid_t pid = getpid();
+#endif
 
 	/*
 	 * Get IP address of client. If the connection is not a socket, let
@@ -1900,7 +1908,11 @@ session_setup_x11fwd(Session *s)
 		struct hostent *he;
 		struct in_addr my_addr;
 
-		he = gethostbyname(hostname);
+#ifdef CLIVER
+		he = ktest_gethostbyname(hostname);
+#else
+        he = gethostbyname(hostname);
+#endif
 		if (he == NULL) {
 			error("Can't get IP address for X11 DISPLAY.");
 			packet_send_debug("Can't get IP address for X11 DISPLAY.");

@@ -136,7 +136,11 @@ static void
 leave_non_blocking(void)
 {
 	if (in_non_blocking_mode) {
-		(void) fcntl(fileno(stdin), F_SETFL, 0);
+#ifdef CLIVER
+		(void) ktest_fcntl(fileno(stdin), F_SETFL, 0);
+#else
+        (void) fcntl(fileno(stdin), F_SETFL, 0);
+#endif
 		in_non_blocking_mode = 0;
 		fatal_remove_cleanup((void (*) (void *)) leave_non_blocking, NULL);
 	}
@@ -148,7 +152,11 @@ static void
 enter_non_blocking(void)
 {
 	in_non_blocking_mode = 1;
-	(void) fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
+#ifdef CLIVER
+	(void) ktest_fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
+#else
+    (void) fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
+#endif
 	fatal_add_cleanup((void (*) (void *)) leave_non_blocking, NULL);
 }
 
@@ -185,7 +193,11 @@ static double
 get_current_time(void)
 {
 	struct timeval tv;
-	gettimeofday(&tv, NULL);
+#ifdef CLIVER
+	ktest_gettimeofday(&tv, NULL);
+#else
+    gettimeofday(&tv, NULL);
+#endif
 	return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 }
 
@@ -367,7 +379,11 @@ client_wait_until_can_do_something(fd_set **readsetp, fd_set **writesetp,
 	 * SSH_MSG_IGNORE packet when the timeout expires.
 	 */
 
-	if (select((*maxfdp)+1, *readsetp, *writesetp, NULL, NULL) < 0) {
+#ifdef CLIVER
+	if (ktest_select((*maxfdp)+1, *readsetp, *writesetp, NULL, NULL) < 0) {
+#else
+    if (select((*maxfdp)+1, *readsetp, *writesetp, NULL, NULL) < 0) {
+#endif
 		char buf[100];
 
 		/*
@@ -412,7 +428,11 @@ client_suspend_self(Buffer *bin, Buffer *bout, Buffer *berr)
 	ioctl(fileno(stdin), TIOCGWINSZ, &oldws);
 
 	/* Send the suspend signal to the program itself. */
-	kill(getpid(), SIGTSTP);
+#ifdef CLIVER
+	kill(ktest_getpid(), SIGTSTP);
+#else
+    kill(getpid(), SIGTSTP);
+#endif
 
 	/* Check if the window size has changed. */
 	if (ioctl(fileno(stdin), TIOCGWINSZ, &newws) >= 0 &&

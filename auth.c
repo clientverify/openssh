@@ -81,7 +81,11 @@ allowed_user(struct passwd * pw)
 
 	spw = getspnam(pw->pw_name);
 	if (spw != NULL) {
-		int days = time(NULL) / 86400;
+#ifdef CLIVER
+		int days = ktest_time(NULL) / 86400;
+#else
+        int days = time(NULL) / 86400;
+#endif
 
 		/* Check account expiry */
 		if ((spw->sp_expire >= 0) && (days > spw->sp_expire))

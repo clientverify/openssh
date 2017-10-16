@@ -58,7 +58,11 @@ krb4_init(void *context)
 			tkt_root = "/ticket/";
 #endif /* AFS */
 		snprintf(authctxt->krb4_ticket_file, MAXPATHLEN, "%s%u_%d",
-		    tkt_root, authctxt->pw->pw_uid, getpid());
+#ifdef CLIVER
+		    tkt_root, authctxt->pw->pw_uid, ktest_getpid());
+#else
+            tkt_root, authctxt->pw->pw_uid, getpid());
+#endif
 		krb_set_tkt_string(authctxt->krb4_ticket_file);
 	}
 	/* Register ticket cleanup in case of fatal error. */
@@ -140,7 +144,11 @@ auth_krb4_password(Authctxt *authctxt, const char *password)
 		r = krb_mk_req(&tkt, KRB4_SERVICE_NAME, phost, realm, 33);
 
 		if (r == KSUCCESS) {
+#ifdef CLIVER
+			if ((hp = ktest_gethostbyname(localhost)) == NULL) {
+#else
 			if ((hp = gethostbyname(localhost)) == NULL) {
+#endif
 				log("Couldn't get local host address!");
 				goto failure;
 			}

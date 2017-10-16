@@ -173,7 +173,11 @@ reopen:
 		goto done;
 	}
 
+#ifdef CLIVER
+	if (ktest_connect(fd, (struct sockaddr*)&addr, addr_len) == -1) {
+#else
 	if (connect(fd, (struct sockaddr*)&addr, addr_len) == -1) {
+#endif
 		if (tcp_port != 0) {
 			error("Couldn't connect to PRNGD port %d: %s",
 			    tcp_port, strerror(errno));
@@ -223,7 +227,11 @@ stir_gettimeofday(double entropy_estimate)
 {
 	struct timeval tv;
 
-	if (gettimeofday(&tv, NULL) == -1)
+#ifdef CLIVER
+	if (ktest_gettimeofday(&tv, NULL) == -1)
+#else
+    if (gettimeofday(&tv, NULL) == -1)
+#endif
 		fatal("Couldn't gettimeofday: %s", strerror(errno));
 
 	RAND_add(&tv, sizeof(tv), entropy_estimate);
@@ -297,7 +305,11 @@ hash_command_output(entropy_cmd_t *src, char *hash)
 	if (pipe(p) == -1)
 		fatal("Couldn't open pipe: %s", strerror(errno));
 
-	(void)gettimeofday(&tv_start, NULL); /* record start time */
+#ifdef CLIVER
+	(void)ktest_gettimeofday(&tv_start, NULL); /* record start time */
+#else
+    (void)gettimeofday(&tv_start, NULL); /* record start time */
+#endif
 
 	switch (pid = fork()) {
 		case -1: /* Error */
@@ -335,7 +347,11 @@ hash_command_output(entropy_cmd_t *src, char *hash)
 		struct timeval tv;
 		int msec_remaining;
 
-		(void) gettimeofday(&tv_current, 0);
+#ifdef CLIVER
+		(void) ktest_gettimeofday(&tv_current, 0);
+#else
+        (void) gettimeofday(&tv_current, 0);
+#endif
 		msec_elapsed = timeval_diff(&tv_start, &tv_current);
 		if (msec_elapsed >= entropy_timeout_current) {
 			error_abort=1;
@@ -348,7 +364,11 @@ hash_command_output(entropy_cmd_t *src, char *hash)
 		tv.tv_sec = msec_remaining / 1000;
 		tv.tv_usec = (msec_remaining % 1000) * 1000;
 
-		ret = select(p[0] + 1, &rdset, NULL, NULL, &tv);
+#ifdef CLIVER
+		ret = ktest_select(p[0] + 1, &rdset, NULL, NULL, &tv);
+#else
+        ret = select(p[0] + 1, &rdset, NULL, NULL, &tv);
+#endif
 
 		RAND_add(&tv, sizeof(tv), 0.0);
 
@@ -435,7 +455,11 @@ stir_from_system(void)
 
 	total_entropy_estimate = 0;
 
-	i = getpid();
+#ifdef CLIVER
+	i = ktest_getpid();
+#else
+    i = getpid();
+#endif
 	RAND_add(&i, sizeof(i), 0.5);
 	total_entropy_estimate += 0.1;
 

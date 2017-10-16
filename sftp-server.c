@@ -723,7 +723,11 @@ ls_file(char *name, struct stat *st)
 		group = gbuf;
 	}
 	if (ltime != NULL) {
+#ifdef CLIVER
+		if (ktest_time(NULL) - st->st_mtime < (365*24*60*60)/2)
+#else
 		if (time(NULL) - st->st_mtime < (365*24*60*60)/2)
+#endif
 			sz = strftime(tbuf, sizeof tbuf, "%b %e %H:%M", ltime);
 		else
 			sz = strftime(tbuf, sizeof tbuf, "%b %e  %Y", ltime);
@@ -1084,7 +1088,11 @@ main(int ac, char **av)
 		if (olen > 0)
 			FD_SET(out, wset);
 
-		if (select(max+1, rset, wset, NULL, NULL) < 0) {
+#ifdef CLIVER
+		if (ktest_select(max+1, rset, wset, NULL, NULL) < 0) {
+#else
+        if (select(max+1, rset, wset, NULL, NULL) < 0) {
+#endif
 			if (errno == EINTR)
 				continue;
 			exit(2);

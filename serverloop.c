@@ -102,8 +102,13 @@ notify_setup(void)
 {
 	if (pipe(notify_pipe) < 0) {
 		error("pipe(notify_pipe) failed %s", strerror(errno));
+#ifdef CLIVER
+	} else if ((ktest_fcntl(notify_pipe[0], F_SETFD, 1) == -1) ||
+	    (ktest_fcntl(notify_pipe[1], F_SETFD, 1) == -1)) {
+#else
 	} else if ((fcntl(notify_pipe[0], F_SETFD, 1) == -1) ||
 	    (fcntl(notify_pipe[1], F_SETFD, 1) == -1)) {
+#endif
 		error("fcntl(notify_pipe, F_SETFD) failed %s", strerror(errno));
 		close(notify_pipe[0]);
 		close(notify_pipe[1]);
@@ -323,7 +328,11 @@ wait_until_can_do_something(fd_set **readsetp, fd_set **writesetp, int *maxfdp,
 		    max_time_milliseconds);
 
 	/* Wait for something to happen, or the timeout to expire. */
-	ret = select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
+#ifdef CLIVER
+	ret = ktest_select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
+#else
+    ret = select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
+#endif
 
 	if (ret == -1) {
 		memset(*readsetp, 0, *nallocp);

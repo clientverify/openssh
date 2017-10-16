@@ -2262,7 +2262,13 @@ connect_to(const char *host, u_short port)
 		}
 		if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0)
 			fatal("connect_to: F_SETFL: %s", strerror(errno));
+#ifdef CLIVER
+		if (ktest_connect(sock, ai->ai_addr, ai->ai_addrlen) < 0 &&
+#else
 		if (connect(sock, ai->ai_addr, ai->ai_addrlen) < 0 &&
+#endif
+
+
 		    errno != EINPROGRESS) {
 			error("connect_to %.100s port %s: %.100s", ntop, strport,
 			    strerror(errno));
@@ -2433,7 +2439,11 @@ connect_local_xsocket(u_int dnr)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	snprintf(addr.sun_path, sizeof addr.sun_path, _PATH_UNIX_X, dnr);
+#ifdef CLIVER
+	if (ktest_connect(sock, (struct sockaddr *) & addr, sizeof(addr)) == 0)
+#else
 	if (connect(sock, (struct sockaddr *) & addr, sizeof(addr)) == 0)
+#endif
 		return sock;
 	close(sock);
 	error("connect %.100s: %.100s", addr.sun_path, strerror(errno));
@@ -2520,7 +2530,11 @@ x11_connect_display(void)
 			continue;
 		}
 		/* Connect it to the display. */
+#ifdef CLIVER
+		if (ktest_connect(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#else
 		if (connect(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#endif
 			debug("connect %.100s port %d: %.100s", buf,
 			    6000 + display_number, strerror(errno));
 			close(sock);
@@ -2755,7 +2769,11 @@ auth_input_request_forwarding(struct passwd * pw)
 		return 0;
 	}
 	snprintf(auth_sock_name, MAXPATHLEN, "%s/agent.%d",
-		 auth_sock_dir, (int) getpid());
+#ifdef CLIVER
+		 auth_sock_dir, (int) ktest_getpid());
+#else
+         auth_sock_dir, (int) getpid());
+#endif
 
 	/* delete agent socket on fatal() */
 	fatal_add_cleanup(auth_sock_cleanup_proc, pw);

@@ -193,11 +193,19 @@ void
 packet_set_nonblocking(void)
 {
 	/* Set the socket into non-blocking mode. */
-	if (fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
+#ifdef CLIVER
+	if (ktest_fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
+#else
+    if (fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
+#endif
 		error("fcntl O_NONBLOCK: %.100s", strerror(errno));
 
 	if (connection_out != connection_in) {
-		if (fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
+#ifdef CLIVER
+		if (ktest_fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
+#else
+        if (fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
+#endif
 			error("fcntl O_NONBLOCK: %.100s", strerror(errno));
 	}
 }
@@ -655,7 +663,11 @@ packet_read_seqnr(u_int32_t *seqnr_p)
 		FD_SET(connection_in, setp);
 
 		/* Wait for some data to arrive. */
-		while (select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
+#ifdef CLIVER
+		while (ktest_select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
+#else
+        while (select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
+#endif
 		    (errno == EAGAIN || errno == EINTR))
 			;
 
@@ -1159,7 +1171,11 @@ packet_write_wait(void)
 		memset(setp, 0, howmany(connection_out + 1, NFDBITS) *
 		    sizeof(fd_mask));
 		FD_SET(connection_out, setp);
-		while (select(connection_out + 1, NULL, setp, NULL, NULL) == -1 &&
+#ifdef CLIVER
+		while (ktest_select(connection_out + 1, NULL, setp, NULL, NULL) == -1 &&
+#else
+        while (select(connection_out + 1, NULL, setp, NULL, NULL) == -1 &&
+#endif
 		    (errno == EAGAIN || errno == EINTR))
 			;
 		packet_write_poll();

@@ -407,7 +407,11 @@ try_krb4_authentication(void)
 		return 0;
 	}
 	/* This can really be anything. */
-	checksum = (u_long)getpid();
+#ifdef CLIVER
+	checksum = (u_long)ktest_getpid();
+#else
+    checksum = (u_long)getpid();
+#endif
 
 	r = krb_mk_req(&auth, KRB4_SERVICE_NAME, inst, realm, checksum);
 	if (r != KSUCCESS) {
@@ -704,7 +708,11 @@ send_krb4_tgt(void)
 	if (problem)
 		goto out;
 
-	if (time(0) > krb_life_to_time(creds->issue_date, creds->lifetime)) {
+#ifdef CLIVER
+	if (ktest_time(0) > krb_life_to_time(creds->issue_date, creds->lifetime)) {
+#else
+    if (time(0) > krb_life_to_time(creds->issue_date, creds->lifetime)) {
+#endif
 		problem = RD_AP_EXP;
 		goto out;
 	}

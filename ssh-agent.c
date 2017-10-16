@@ -621,7 +621,11 @@ static void
 new_socket(sock_type type, int fd)
 {
 	u_int i, old_alloc;
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+#ifdef CLIVER
+	if (ktest_fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+#else
+    if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+#endif
 		error("fcntl O_NONBLOCK: %s", strerror(errno));
 
 	if (fd > max_fd)
@@ -1025,7 +1029,11 @@ skip:
 
 	while (1) {
 		prepare_select(&readsetp, &writesetp, &max_fd, &nalloc);
-		if (select(max_fd + 1, readsetp, writesetp, NULL, NULL) < 0) {
+#ifdef CLIVER
+		if (ktest_select(max_fd + 1, readsetp, writesetp, NULL, NULL) < 0) {
+#else
+        if (select(max_fd + 1, readsetp, writesetp, NULL, NULL) < 0) {
+#endif
 			if (errno == EINTR)
 				continue;
 			fatal("select: %s", strerror(errno));

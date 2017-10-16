@@ -331,7 +331,11 @@ ssh_connect(const char *host, struct sockaddr_storage * hostaddr,
 			 * the remote uid as root.
 			 */
 			temporarily_use_uid(pw);
+#ifdef CLIVER
+			if (ktest_connect(sock, ai->ai_addr, ai->ai_addrlen) >= 0) {
+#else
 			if (connect(sock, ai->ai_addr, ai->ai_addrlen) >= 0) {
+#endif
 				/* Successful connection. */
 				memcpy(hostaddr, ai->ai_addr, ai->ai_addrlen);
 				restore_uid();

@@ -383,7 +383,11 @@ login_set_current_time(struct logininfo *li)
 {
 	struct timeval tv;
 
-	gettimeofday(&tv, NULL);
+#ifdef CLIVER
+	ktest_gettimeofday(&tv, NULL);
+#else
+    gettimeofday(&tv, NULL);
+#endif
 
 	li->tv_sec = tv.tv_sec;
 	li->tv_usec = tv.tv_usec;

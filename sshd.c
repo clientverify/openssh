@@ -913,7 +913,11 @@ main(int ac, char **av)
 				verbose("socket: %.100s", strerror(errno));
 				continue;
 			}
-			if (fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#ifdef CLIVER
+			if (ktest_fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#else
+            if (fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#endif
 				error("listen_sock O_NONBLOCK: %s", strerror(errno));
 				close(listen_sock);
 				continue;
@@ -981,7 +985,11 @@ main(int ac, char **av)
 			 */
 			f = fopen(options.pid_file, "wb");
 			if (f) {
-				fprintf(f, "%u\n", (u_int) getpid());
+#ifdef CLIVER
+				fprintf(f, "%u\n", (u_int) ktest_getpid());
+#else
+                fprintf(f, "%u\n", (u_int) getpid());
+#endif
 				fclose(f);
 			}
 		}
@@ -1017,7 +1025,11 @@ main(int ac, char **av)
 					FD_SET(startup_pipes[i], fdset);
 
 			/* Wait in select until there is a connection. */
-			ret = select(maxfd+1, fdset, NULL, NULL, NULL);
+#ifdef CLIVER
+			ret = ktest_select(maxfd+1, fdset, NULL, NULL, NULL);
+#else
+            ret = select(maxfd+1, fdset, NULL, NULL, NULL);
+#endif
 			if (ret < 0 && errno != EINTR)
 				error("select: %.100s", strerror(errno));
 			if (received_sigterm) {
@@ -1059,7 +1071,11 @@ main(int ac, char **av)
 						error("accept: %.100s", strerror(errno));
 					continue;
 				}
-				if (fcntl(newsock, F_SETFL, 0) < 0) {
+#ifdef CLIVER
+				if (ktest_fcntl(newsock, F_SETFL, 0) < 0) {
+#else
+                if (fcntl(newsock, F_SETFL, 0) < 0) {
+#endif
 					error("newsock del O_NONBLOCK: %s", strerror(errno));
 					close(newsock);
 					continue;
@@ -1098,7 +1114,12 @@ main(int ac, char **av)
 					sock_in = newsock;
 					sock_out = newsock;
 					startup_pipe = -1;
-					pid = getpid();
+#ifdef CLIVER
+					pid = ktest_getpid();
+#else
+                    pid = getpid();
+#endif
+
 					break;
 				} else {
 					/*

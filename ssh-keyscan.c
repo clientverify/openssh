@@ -403,9 +403,17 @@ tcpconnect(char *host)
 			error("socket: %s", strerror(errno));
 			continue;
 		}
-		if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
+#ifdef CLIVER
+		if (ktest_fcntl(s, F_SETFL, O_NONBLOCK) < 0)
+#else
+        if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
+#endif
 			fatal("F_SETFL: %s", strerror(errno));
+#ifdef CLIVER
+		if (ktest_connect(s, ai->ai_addr, ai->ai_addrlen) < 0 &&
+#else
 		if (connect(s, ai->ai_addr, ai->ai_addrlen) < 0 &&
+#endif
 		    errno != EINPROGRESS)
 			error("connect (`%s'): %s", host, strerror(errno));
 		else
@@ -448,7 +456,11 @@ conalloc(char *iname, char *oname, int keytype)
 	fdcon[s].c_len = 4;
 	fdcon[s].c_off = 0;
 	fdcon[s].c_keytype = keytype;
-	gettimeofday(&fdcon[s].c_tv, NULL);
+#ifdef CLIVER
+	ktest_gettimeofday(&fdcon[s].c_tv, NULL);
+#else
+    gettimeofday(&fdcon[s].c_tv, NULL);
+#endif
 	fdcon[s].c_tv.tv_sec += timeout;
 	TAILQ_INSERT_TAIL(&tq, &fdcon[s], c_link);
 	FD_SET(s, read_wait);
@@ -477,7 +489,11 @@ static void
 contouch(int s)
 {
 	TAILQ_REMOVE(&tq, &fdcon[s], c_link);
-	gettimeofday(&fdcon[s].c_tv, NULL);
+#ifdef CLIVER
+	ktest_gettimeofday(&fdcon[s].c_tv, NULL);
+#else
+    gettimeofday(&fdcon[s].c_tv, NULL);
+#endif
 	fdcon[s].c_tv.tv_sec += timeout;
 	TAILQ_INSERT_TAIL(&tq, &fdcon[s], c_link);
 }
@@ -608,7 +624,11 @@ conloop(void)
 	int i;
 	con *c;
 
-	gettimeofday(&now, NULL);
+#ifdef CLIVER
+	ktest_gettimeofday(&now, NULL);
+#else
+    gettimeofday(&now, NULL);
+#endif
 	c = tq.tqh_first;
 
 	if (c && (c->c_tv.tv_sec > now.tv_sec ||
@@ -628,7 +648,11 @@ conloop(void)
 	e = xmalloc(read_wait_size);
 	memcpy(e, read_wait, read_wait_size);
 
-	while (select(maxfd, r, NULL, e, &seltime) == -1 &&
+#ifdef CLIVER
+	while (ktest_select(maxfd, r, NULL, e, &seltime) == -1 &&
+#else
+    while (select(maxfd, r, NULL, e, &seltime) == -1 &&
+#endif
 	    (errno == EAGAIN || errno == EINTR))
 		;
 

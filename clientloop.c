@@ -136,11 +136,7 @@ static void
 leave_non_blocking(void)
 {
 	if (in_non_blocking_mode) {
-#ifdef CLIVER
-		(void) ktest_fcntl(fileno(stdin), F_SETFL, 0);
-#else
         (void) fcntl(fileno(stdin), F_SETFL, 0);
-#endif
 		in_non_blocking_mode = 0;
 		fatal_remove_cleanup((void (*) (void *)) leave_non_blocking, NULL);
 	}
@@ -152,11 +148,7 @@ static void
 enter_non_blocking(void)
 {
 	in_non_blocking_mode = 1;
-#ifdef CLIVER
-	(void) ktest_fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
-#else
     (void) fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
-#endif
 	fatal_add_cleanup((void (*) (void *)) leave_non_blocking, NULL);
 }
 

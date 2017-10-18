@@ -193,19 +193,11 @@ void
 packet_set_nonblocking(void)
 {
 	/* Set the socket into non-blocking mode. */
-#ifdef CLIVER
-	if (ktest_fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
-#else
     if (fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
-#endif
 		error("fcntl O_NONBLOCK: %.100s", strerror(errno));
 
 	if (connection_out != connection_in) {
-#ifdef CLIVER
-		if (ktest_fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
-#else
         if (fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
-#endif
 			error("fcntl O_NONBLOCK: %.100s", strerror(errno));
 	}
 }

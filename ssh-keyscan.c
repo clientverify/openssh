@@ -403,11 +403,7 @@ tcpconnect(char *host)
 			error("socket: %s", strerror(errno));
 			continue;
 		}
-#ifdef CLIVER
-		if (ktest_fcntl(s, F_SETFL, O_NONBLOCK) < 0)
-#else
         if (fcntl(s, F_SETFL, O_NONBLOCK) < 0)
-#endif
 			fatal("F_SETFL: %s", strerror(errno));
 #ifdef CLIVER
 		if (ktest_connect(s, ai->ai_addr, ai->ai_addrlen) < 0 &&

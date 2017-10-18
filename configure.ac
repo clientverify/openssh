@@ -333,7 +333,7 @@ AC_CHECK_HEADERS(bstring.h crypt.h endian.h floatingpoint.h \
 	sys/poll.h sys/queue.h sys/select.h sys/stat.h \
 	sys/stropts.h sys/sysmacros.h sys/time.h \
 	sys/ttcompat.h sys/un.h time.h ttyent.h usersec.h \
-	util.h utime.h utmp.h utmpx.h KTest.h)
+	util.h utime.h utmp.h utmpx.h)
 
 # Checks for libraries.
 AC_CHECK_FUNC(yp_match, , AC_CHECK_LIB(nsl, yp_match))

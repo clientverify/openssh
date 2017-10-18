@@ -621,11 +621,7 @@ static void
 new_socket(sock_type type, int fd)
 {
 	u_int i, old_alloc;
-#ifdef CLIVER
-	if (ktest_fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-#else
     if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-#endif
 		error("fcntl O_NONBLOCK: %s", strerror(errno));
 
 	if (fd > max_fd)

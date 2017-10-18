@@ -91,9 +91,7 @@ char *__progname;
 #endif
 
 #ifdef CLIVER
-#include "KTest.h"
-static const char *arg_ktest_filename = NULL;
-static enum kTestMode arg_ktest_mode = KTEST_NONE;
+#include <openssl/KTest.h>
 #endif
 
 /* Server configuration options. */
@@ -913,11 +911,7 @@ main(int ac, char **av)
 				verbose("socket: %.100s", strerror(errno));
 				continue;
 			}
-#ifdef CLIVER
-			if (ktest_fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
-#else
             if (fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
-#endif
 				error("listen_sock O_NONBLOCK: %s", strerror(errno));
 				close(listen_sock);
 				continue;
@@ -954,7 +948,11 @@ main(int ac, char **av)
 				fatal("listen: %.100s", strerror(errno));
 
 		}
+#ifdef CLIVER
+        ktest_freeaddrinfo(options.listen_addrs);
+#else
 		freeaddrinfo(options.listen_addrs);
+#endif
 
 		if (!num_listen_socks)
 			fatal("Cannot bind any address.");
@@ -1004,7 +1002,6 @@ main(int ac, char **av)
 		startup_pipes = xmalloc(options.max_startups * sizeof(int));
 		for (i = 0; i < options.max_startups; i++)
 			startup_pipes[i] = -1;
-
 		/*
 		 * Stay listening for connections until the system crashes or
 		 * the daemon is killed with a signal.
@@ -1071,11 +1068,7 @@ main(int ac, char **av)
 						error("accept: %.100s", strerror(errno));
 					continue;
 				}
-#ifdef CLIVER
-				if (ktest_fcntl(newsock, F_SETFL, 0) < 0) {
-#else
                 if (fcntl(newsock, F_SETFL, 0) < 0) {
-#endif
 					error("newsock del O_NONBLOCK: %s", strerror(errno));
 					close(newsock);
 					continue;

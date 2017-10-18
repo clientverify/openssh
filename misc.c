@@ -51,11 +51,7 @@ set_nonblock(int fd)
 {
 	int val;
 
-#ifdef CLIVER
-	val = ktest_fcntl(fd, F_GETFL, 0);
-#else
     val = fcntl(fd, F_GETFL, 0);
-#endif
 	if (val < 0) {
 		error("fcntl(%d, F_GETFL, 0): %s", fd, strerror(errno));
 		return;
@@ -66,11 +62,7 @@ set_nonblock(int fd)
 	}
 	debug("fd %d setting O_NONBLOCK", fd);
 	val |= O_NONBLOCK;
-#ifdef CLIVER
-	if (ktest_fcntl(fd, F_SETFL, val) == -1)
-#else
     if (fcntl(fd, F_SETFL, val) == -1)
-#endif
 		debug("fcntl(%d, F_SETFL, O_NONBLOCK): %s",
 		    fd, strerror(errno));
 }
@@ -80,11 +72,7 @@ unset_nonblock(int fd)
 {
 	int val;
 
-#ifdef CLIVER
-	val = ktest_fcntl(fd, F_GETFL, 0);
-#else
     val = fcntl(fd, F_GETFL, 0);
-#endif
 	if (val < 0) {
 		error("fcntl(%d, F_GETFL, 0): %s", fd, strerror(errno));
 		return;
@@ -95,11 +83,7 @@ unset_nonblock(int fd)
 	}
 	debug("fd %d clearing O_NONBLOCK", fd);
 	val &= ~O_NONBLOCK;
-#ifdef CLIVER
-	if (ktest_fcntl(fd, F_SETFL, val) == -1)
-#else
     if (fcntl(fd, F_SETFL, val) == -1)
-#endif
 		debug("fcntl(%d, F_SETFL, O_NONBLOCK): %s",
 		    fd, strerror(errno));
 }

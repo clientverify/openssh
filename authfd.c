@@ -82,11 +82,7 @@ ssh_get_authentication_socket(void)
 		return -1;
 
 	/* close on exec */
-#ifdef CLIVER
-	if (ktest_fcntl(sock, F_SETFD, 1) == -1) {
-#else
 	if (fcntl(sock, F_SETFD, 1) == -1) {
-#endif
 		close(sock);
 		return -1;
 	}

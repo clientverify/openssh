@@ -668,11 +668,11 @@ do_login(Session *s, const char *command)
 	struct sockaddr_storage from;
 	time_t last_login_time;
 	struct passwd * pw = s->pw;
-#ifdef CLIVER
-	pid_t pid = ktest_getpid();
-#else
+//#ifdef CLIVER
+//	pid_t pid = ktest_getpid();
+//#else
     pid_t pid = getpid();
-#endif
+//#endif
 
 	/*
 	 * Get IP address of client. If the connection is not a socket, let

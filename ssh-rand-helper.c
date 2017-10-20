@@ -227,11 +227,11 @@ stir_gettimeofday(double entropy_estimate)
 {
 	struct timeval tv;
 
-#ifdef CLIVER
-	if (ktest_gettimeofday(&tv, NULL) == -1)
-#else
+//#ifdef CLIVER
+//	if (ktest_gettimeofday(&tv, NULL) == -1)
+//#else
     if (gettimeofday(&tv, NULL) == -1)
-#endif
+//#endif
 		fatal("Couldn't gettimeofday: %s", strerror(errno));
 
 	RAND_add(&tv, sizeof(tv), entropy_estimate);
@@ -305,11 +305,11 @@ hash_command_output(entropy_cmd_t *src, char *hash)
 	if (pipe(p) == -1)
 		fatal("Couldn't open pipe: %s", strerror(errno));
 
-#ifdef CLIVER
-	(void)ktest_gettimeofday(&tv_start, NULL); /* record start time */
-#else
+//#ifdef CLIVER
+//	(void)ktest_gettimeofday(&tv_start, NULL); /* record start time */
+//#else
     (void)gettimeofday(&tv_start, NULL); /* record start time */
-#endif
+//#endif
 
 	switch (pid = fork()) {
 		case -1: /* Error */
@@ -347,11 +347,11 @@ hash_command_output(entropy_cmd_t *src, char *hash)
 		struct timeval tv;
 		int msec_remaining;
 
-#ifdef CLIVER
-		(void) ktest_gettimeofday(&tv_current, 0);
-#else
+//#ifdef CLIVER
+//		(void) ktest_gettimeofday(&tv_current, 0);
+//#else
         (void) gettimeofday(&tv_current, 0);
-#endif
+//#endif
 		msec_elapsed = timeval_diff(&tv_start, &tv_current);
 		if (msec_elapsed >= entropy_timeout_current) {
 			error_abort=1;
@@ -455,11 +455,11 @@ stir_from_system(void)
 
 	total_entropy_estimate = 0;
 
-#ifdef CLIVER
-	i = ktest_getpid();
-#else
+//#ifdef CLIVER
+//	i = ktest_getpid();
+//#else
     i = getpid();
-#endif
+//#endif
 	RAND_add(&i, sizeof(i), 0.5);
 	total_entropy_estimate += 0.1;
 

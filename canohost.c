@@ -104,11 +104,11 @@ get_remote_hostname(int socket, int verify_reverse_mapping)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = from.ss_family;
 	hints.ai_socktype = SOCK_STREAM;
-#ifdef CLIVER
-    if (ktest_getaddrinfo(name, NULL, &hints, &aitop) != 0) {
-#else
+//#ifdef CLIVER
+ //   if (ktest_getaddrinfo(name, NULL, &hints, &aitop) != 0) {
+//#else
     if (getaddrinfo(name, NULL, &hints, &aitop) != 0) {
-#endif
+//#endif
 		log("reverse mapping checking getaddrinfo for %.700s "
 		    "failed - POSSIBLE BREAKIN ATTEMPT!", name);
 		return xstrdup(ntop);

@@ -185,11 +185,11 @@ static double
 get_current_time(void)
 {
 	struct timeval tv;
-#ifdef CLIVER
-	ktest_gettimeofday(&tv, NULL);
-#else
+//#ifdef CLIVER
+//	ktest_gettimeofday(&tv, NULL);
+//#else
     gettimeofday(&tv, NULL);
-#endif
+//#endif
 	return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 }
 
@@ -420,11 +420,11 @@ client_suspend_self(Buffer *bin, Buffer *bout, Buffer *berr)
 	ioctl(fileno(stdin), TIOCGWINSZ, &oldws);
 
 	/* Send the suspend signal to the program itself. */
-#ifdef CLIVER
-	kill(ktest_getpid(), SIGTSTP);
-#else
+//#ifdef CLIVER
+//	kill(ktest_getpid(), SIGTSTP);
+//#else
     kill(getpid(), SIGTSTP);
-#endif
+//#endif
 
 	/* Check if the window size has changed. */
 	if (ioctl(fileno(stdin), TIOCGWINSZ, &newws) >= 0 &&

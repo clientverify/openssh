@@ -391,11 +391,11 @@ tcpconnect(char *host)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = IPv4or6;
 	hints.ai_socktype = SOCK_STREAM;
-#ifdef CLIVER
-	if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0)
-#else
+//#ifdef CLIVER
+//	if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0)
+//#else
 	if ((gaierr = getaddrinfo(host, strport, &hints, &aitop)) != 0)
-#endif
+//#endif
 		fatal("getaddrinfo %s: %s", host, gai_strerror(gaierr));
 	for (ai = aitop; ai; ai = ai->ai_next) {
 		s = socket(ai->ai_family, SOCK_STREAM, 0);
@@ -452,11 +452,11 @@ conalloc(char *iname, char *oname, int keytype)
 	fdcon[s].c_len = 4;
 	fdcon[s].c_off = 0;
 	fdcon[s].c_keytype = keytype;
-#ifdef CLIVER
-	ktest_gettimeofday(&fdcon[s].c_tv, NULL);
-#else
+//#ifdef CLIVER
+//	ktest_gettimeofday(&fdcon[s].c_tv, NULL);
+//#else
     gettimeofday(&fdcon[s].c_tv, NULL);
-#endif
+//#endif
 	fdcon[s].c_tv.tv_sec += timeout;
 	TAILQ_INSERT_TAIL(&tq, &fdcon[s], c_link);
 	FD_SET(s, read_wait);
@@ -485,11 +485,11 @@ static void
 contouch(int s)
 {
 	TAILQ_REMOVE(&tq, &fdcon[s], c_link);
-#ifdef CLIVER
-	ktest_gettimeofday(&fdcon[s].c_tv, NULL);
-#else
+//#ifdef CLIVER
+//	ktest_gettimeofday(&fdcon[s].c_tv, NULL);
+//#else
     gettimeofday(&fdcon[s].c_tv, NULL);
-#endif
+//#endif
 	fdcon[s].c_tv.tv_sec += timeout;
 	TAILQ_INSERT_TAIL(&tq, &fdcon[s], c_link);
 }
@@ -620,11 +620,11 @@ conloop(void)
 	int i;
 	con *c;
 
-#ifdef CLIVER
-	ktest_gettimeofday(&now, NULL);
-#else
+//#ifdef CLIVER
+//	ktest_gettimeofday(&now, NULL);
+//#else
     gettimeofday(&now, NULL);
-#endif
+//#endif
 	c = tq.tqh_first;
 
 	if (c && (c->c_tv.tv_sec > now.tv_sec ||

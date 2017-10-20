@@ -2013,11 +2013,11 @@ channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_por
 	hints.ai_flags = gateway_ports ? AI_PASSIVE : 0;
 	hints.ai_socktype = SOCK_STREAM;
 	snprintf(strport, sizeof strport, "%d", listen_port);
-#ifdef CLIVER
-    if (ktest_getaddrinfo(NULL, strport, &hints, &aitop) != 0)
-#else
+//#ifdef CLIVER
+//    if (ktest_getaddrinfo(NULL, strport, &hints, &aitop) != 0)
+//#else
 	if (getaddrinfo(NULL, strport, &hints, &aitop) != 0)
-#endif
+//#endif
 		packet_disconnect("getaddrinfo: fatal error");
 
 	for (ai = aitop; ai; ai = ai->ai_next) {
@@ -2238,11 +2238,11 @@ connect_to(const char *host, u_short port)
 	hints.ai_family = IPv4or6;
 	hints.ai_socktype = SOCK_STREAM;
 	snprintf(strport, sizeof strport, "%d", port);
-#ifdef CLIVER
-    if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0) {
-#else
+//#ifdef CLIVER
+//    if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0) {
+//#else
 	if ((gaierr = getaddrinfo(host, strport, &hints, &aitop)) != 0) {
-#endif
+//#endif
 		error("connect_to %.100s: unknown host (%s)", host,
 		    gai_strerror(gaierr));
 		return -1;
@@ -2352,11 +2352,11 @@ x11_create_display_inet(int x11_display_offset, int x11_use_localhost,
 		hints.ai_flags = x11_use_localhost ? 0: AI_PASSIVE;
 		hints.ai_socktype = SOCK_STREAM;
 		snprintf(strport, sizeof strport, "%d", port);
-#ifdef CLIVER
-        if ((gaierr = ktest_getaddrinfo(NULL, strport, &hints, &aitop)) != 0) {
-#else
+//#ifdef CLIVER
+//        if ((gaierr = ktest_getaddrinfo(NULL, strport, &hints, &aitop)) != 0) {
+//#else
 		if ((gaierr = getaddrinfo(NULL, strport, &hints, &aitop)) != 0) {
-#endif
+//#endif
 			error("getaddrinfo: %.100s", gai_strerror(gaierr));
 			return -1;
 		}
@@ -2514,11 +2514,11 @@ x11_connect_display(void)
 	hints.ai_family = IPv4or6;
 	hints.ai_socktype = SOCK_STREAM;
 	snprintf(strport, sizeof strport, "%d", 6000 + display_number);
-#ifdef CLIVER
-    if ((gaierr = ktest_getaddrinfo(buf, strport, &hints, &aitop)) != 0) {
-#else
+//#ifdef CLIVER
+//    if ((gaierr = ktest_getaddrinfo(buf, strport, &hints, &aitop)) != 0) {
+//#else
 	if ((gaierr = getaddrinfo(buf, strport, &hints, &aitop)) != 0) {
-#endif
+//#endif
 		error("%.100s: unknown host. (%s)", buf, gai_strerror(gaierr));
 		return -1;
 	}
@@ -2769,11 +2769,11 @@ auth_input_request_forwarding(struct passwd * pw)
 		return 0;
 	}
 	snprintf(auth_sock_name, MAXPATHLEN, "%s/agent.%d",
-#ifdef CLIVER
-		 auth_sock_dir, (int) ktest_getpid());
-#else
+//#ifdef CLIVER
+//		 auth_sock_dir, (int) ktest_getpid());
+//#else
          auth_sock_dir, (int) getpid());
-#endif
+//#endif
 
 	/* delete agent socket on fatal() */
 	fatal_add_cleanup(auth_sock_cleanup_proc, pw);

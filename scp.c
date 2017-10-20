@@ -1119,11 +1119,11 @@ progressmeter(int flag)
 	char buf[256];
 
 	if (flag == -1) {
-#ifdef CLIVER
-		(void) ktest_gettimeofday(&start, (struct timezone *) 0);
-#else
+//#ifdef CLIVER
+//		(void) ktest_gettimeofday(&start, (struct timezone *) 0);
+//#else
         (void) gettimeofday(&start, (struct timezone *) 0);
-#endif
+//#endif
 		lastupdate = start;
 		lastsize = 0;
 	}

@@ -205,11 +205,11 @@ ssh_create_socket(struct passwd *pw, int privileged, int family)
 	hints.ai_family = family;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
-#ifdef CLIVER
-	gaierr = ktest_getaddrinfo(options.bind_address, "0", &hints, &res);
-#else
+//#ifdef CLIVER
+//	gaierr = ktest_getaddrinfo(options.bind_address, "0", &hints, &res);
+//#else
 	gaierr = getaddrinfo(options.bind_address, "0", &hints, &res);
-#endif
+//#endif
 	if (gaierr) {
 		error("getaddrinfo: %s: %s", options.bind_address,
 		    gai_strerror(gaierr));
@@ -283,11 +283,11 @@ ssh_connect(const char *host, struct sockaddr_storage * hostaddr,
 	hints.ai_family = family;
 	hints.ai_socktype = SOCK_STREAM;
 	snprintf(strport, sizeof strport, "%d", port);
-#ifdef CLIVER
-	if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0)
-#else
+//#ifdef CLIVER
+//	if ((gaierr = ktest_getaddrinfo(host, strport, &hints, &aitop)) != 0)
+//#else
 	if ((gaierr = getaddrinfo(host, strport, &hints, &aitop)) != 0)
-#endif
+//#endif
 		fatal("%s: %.100s: %s", __progname, host,
 		    gai_strerror(gaierr));
 

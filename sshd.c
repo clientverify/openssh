@@ -948,11 +948,11 @@ main(int ac, char **av)
 				fatal("listen: %.100s", strerror(errno));
 
 		}
-#ifdef CLIVER
-        ktest_freeaddrinfo(options.listen_addrs);
-#else
+//#ifdef CLIVER
+//        ktest_freeaddrinfo(options.listen_addrs);
+//#else
 		freeaddrinfo(options.listen_addrs);
-#endif
+//#endif
 
 		if (!num_listen_socks)
 			fatal("Cannot bind any address.");
@@ -983,11 +983,11 @@ main(int ac, char **av)
 			 */
 			f = fopen(options.pid_file, "wb");
 			if (f) {
-#ifdef CLIVER
-				fprintf(f, "%u\n", (u_int) ktest_getpid());
-#else
+//#ifdef CLIVER
+//				fprintf(f, "%u\n", (u_int) ktest_getpid());
+//#else
                 fprintf(f, "%u\n", (u_int) getpid());
-#endif
+//#endif
 				fclose(f);
 			}
 		}
@@ -1107,11 +1107,11 @@ main(int ac, char **av)
 					sock_in = newsock;
 					sock_out = newsock;
 					startup_pipe = -1;
-#ifdef CLIVER
-					pid = ktest_getpid();
-#else
+//#ifdef CLIVER
+//					pid = ktest_getpid();
+//#else
                     pid = getpid();
-#endif
+//#endif
 
 					break;
 				} else {

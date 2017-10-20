@@ -1,0 +1,19 @@
+# Object files
+*.o
+
+# editor artefacts
+*.swp
+.#*
+#*#
+*~
+
+# Top level excludes
+/Makefile.bak
+/Makefile
+/*.a
+/include
+/*.pc
+/rehash.time
+
+# LLVM/Klee/Cliver files
+.*.bc

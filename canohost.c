@@ -218,8 +218,13 @@ get_socket_address(int socket, int remote, int flags)
 	memset(&addr, 0, sizeof(addr));
 
 	if (remote) {
+#ifdef CLIVER
+		if (ktest_getpeername(socket, (struct sockaddr *)&addr, &addrlen)
+		    < 0) {
+#else
 		if (getpeername(socket, (struct sockaddr *)&addr, &addrlen)
 		    < 0) {
+#endif
 			debug("get_socket_ipaddr: getpeername failed: %.100s",
 			    strerror(errno));
 			return NULL;
@@ -313,7 +318,11 @@ get_sock_port(int sock, int local)
 			return 0;
 		}
 	} else {
+#ifdef CLIVER
+        if (ktest_getpeername(sock, (struct sockaddr *) & from, &fromlen) < 0) {
+#else
 		if (getpeername(sock, (struct sockaddr *) & from, &fromlen) < 0) {
+#endif
 			debug("getpeername failed: %.100s", strerror(errno));
 			fatal_cleanup();
 		}

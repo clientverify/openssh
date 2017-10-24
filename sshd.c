@@ -357,8 +357,13 @@ sshd_exchange_identification(int sock_in, int sock_out)
 
 	if (client_version_string == NULL) {
 		/* Send our protocol version identification. */
+#ifdef CLIVER
+		if (atomicio(ktest_writesocket, sock_out, server_version_string, strlen(server_version_string))
+		    != strlen(server_version_string)) {
+#else
 		if (atomicio(write, sock_out, server_version_string, strlen(server_version_string))
 		    != strlen(server_version_string)) {
+#endif
 			log("Could not write ident string to %s", get_remote_ipaddr());
 			fatal_cleanup();
 		}
@@ -366,7 +371,11 @@ sshd_exchange_identification(int sock_in, int sock_out)
 		/* Read other side's version identification. */
 		memset(buf, 0, sizeof(buf));
 		for (i = 0; i < sizeof(buf) - 1; i++) {
+#ifdef CLIVER
+			if (atomicio(ktest_readsocket, sock_in, &buf[i], 1) != 1) {
+#else
 			if (atomicio(read, sock_in, &buf[i], 1) != 1) {
+#endif
 				log("Did not receive identification string from %s",
 				    get_remote_ipaddr());
 				fatal_cleanup();

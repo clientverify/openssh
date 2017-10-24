@@ -657,11 +657,13 @@ packet_read_seqnr(u_int32_t *seqnr_p)
 		/* Wait for some data to arrive. */
 #ifdef CLIVER
 		while (ktest_select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
-#else
-        while (select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
-#endif
 		    (errno == EAGAIN || errno == EINTR))
 			;
+#else
+        while (select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
+		    (errno == EAGAIN || errno == EINTR))
+			;
+#endif
 
 		/* Read data from the socket. */
 		len = read(connection_in, buf, sizeof(buf));
@@ -1135,7 +1137,11 @@ packet_write_poll(void)
 {
 	int len = buffer_len(&output);
 	if (len > 0) {
+#ifdef CLIVER
+		len = ktest_writesocket(connection_out, buffer_ptr(&output), len);
+#else
 		len = write(connection_out, buffer_ptr(&output), len);
+#endif
 		if (len <= 0) {
 			if (errno == EAGAIN)
 				return;

@@ -932,7 +932,11 @@ main(int ac, char **av)
 			debug("Bind to port %s on %s.", strport, ntop);
 
 			/* Bind the socket to the desired port. */
+#ifdef CLIVER
+            if (ktest_bind(listen_sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#else
 			if (bind(listen_sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#endif
 				if (!ai->ai_next)
 				    error("Bind to port %s on %s failed: %.200s.",
 					    strport, ntop, strerror(errno));
@@ -1012,7 +1016,7 @@ main(int ac, char **av)
 			if (fdset != NULL)
 				xfree(fdset);
 			fdsetsz = howmany(maxfd+1, NFDBITS) * sizeof(fd_mask);
-			fdset = (fd_set *)xmalloc(fdsetsz);
+			fdset = (fd_set *)xmalloc(sizeof(fd_set));
 			memset(fdset, 0, fdsetsz);
 
 			for (i = 0; i < num_listen_socks; i++)
@@ -1061,8 +1065,13 @@ main(int ac, char **av)
 				if (!FD_ISSET(listen_socks[i], fdset))
 					continue;
 				fromlen = sizeof(from);
-				newsock = accept(listen_socks[i], (struct sockaddr *)&from,
-				    &fromlen);
+#ifdef CLIVER
+                newsock = ktest_accept(listen_socks[i], (struct sockaddr *)&from,
+                    &fromlen);
+#else
+                newsock = accept(listen_socks[i], (struct sockaddr *)&from,
+                    &fromlen);
+#endif
 				if (newsock < 0) {
 					if (errno != EINTR && errno != EWOULDBLOCK)
 						error("accept: %.100s", strerror(errno));

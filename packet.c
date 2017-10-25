@@ -625,8 +625,7 @@ packet_read_seqnr(u_int32_t *seqnr_p)
 	char buf[8192];
 	DBG(debug("packet_read()"));
 
-	setp = (fd_set *)xmalloc(howmany(connection_in+1, NFDBITS) *
-	    sizeof(fd_mask));
+	setp = (fd_set *)xmalloc(sizeof(fd_set));
 
 	/* Since we are blocking, ensure that all written packets have been sent. */
 	packet_write_wait();
@@ -664,9 +663,12 @@ packet_read_seqnr(u_int32_t *seqnr_p)
 		    (errno == EAGAIN || errno == EINTR))
 			;
 #endif
-
 		/* Read data from the socket. */
+#ifdef CLIVER
+		len = ktest_readsocket(connection_in, buf, sizeof(buf));
+#else
 		len = read(connection_in, buf, sizeof(buf));
+#endif
 		if (len == 0) {
 			log("Connection closed by %.200s", get_remote_ipaddr());
 			fatal_cleanup();

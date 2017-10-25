@@ -352,7 +352,11 @@ process_input(fd_set * readset)
 
 	/* Read and buffer any input data from the client. */
 	if (FD_ISSET(connection_in, readset)) {
+#ifdef CLIVER
+		len = ktest_readsocket(connection_in, buf, sizeof(buf));
+#else
 		len = read(connection_in, buf, sizeof(buf));
+#endif
 		if (len == 0) {
 			verbose("Connection closed by remote host.");
 			connection_closed = 1;

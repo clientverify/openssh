@@ -38,7 +38,11 @@ get_remote_hostname(int socket, int verify_reverse_mapping)
 	/* Get IP address of client. */
 	fromlen = sizeof(from);
 	memset(&from, 0, sizeof(from));
+#ifdef CLIVER
+	if (ktest_getpeername(socket, (struct sockaddr *) &from, &fromlen) < 0) {
+#else
 	if (getpeername(socket, (struct sockaddr *) &from, &fromlen) < 0) {
+#endif
 		debug("getpeername failed: %.100s", strerror(errno));
 		fatal_cleanup();
 	}

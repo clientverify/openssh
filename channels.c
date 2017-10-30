@@ -1537,7 +1537,7 @@ channel_prepare_select(fd_set **readsetp, fd_set **writesetp, int *maxfdp,
 
 	n = MAX(*maxfdp, channel_max_fd);
 
-	sz = howmany(n+1, NFDBITS) * sizeof(fd_mask);
+	sz = sizeof(fd_set);
 	/* perhaps check sz < nalloc/2 and shrink? */
 	if (*readsetp == NULL || sz > *nallocp) {
 		*readsetp = xrealloc(*readsetp, sz);

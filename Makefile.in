@@ -196,7 +196,7 @@ install: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files host-key
 install-nokeys: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files
 
 scard-install:
-	(cd scard && $(MAKE) DESTDIR=$(DESTDIR) install)
+	(cd scard)
 
 install-files: scard-install
 	$(srcdir)/mkinstalldirs $(DESTDIR)$(bindir)

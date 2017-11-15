@@ -21,6 +21,9 @@ RCSID("$OpenBSD: sshpty.c,v 1.4 2001/12/19 07:18:56 deraadt Exp $");
 #include "sshpty.h"
 #include "log.h"
 #include "misc.h"
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
 
 /* Pty allocated with _getpty gets broken if we do I_PUSH:es to it. */
 #if defined(HAVE__GETPTY) || defined(HAVE_OPENPTY)
@@ -53,7 +56,11 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 	char *name;
 	int i;
 
+#ifdef CLIVER
+    i = ktest_openpty(ptyfd, ttyfd, NULL, NULL, NULL);
+#else
 	i = openpty(ptyfd, ttyfd, NULL, NULL, NULL);
+#endif
 	if (i < 0) {
 		error("openpty: %.100s", strerror(errno));
 		return 0;
@@ -258,7 +265,11 @@ pty_make_controlling_tty(int *ttyfd, const char *ttyname)
 	if (setsid() < 0)
 		error("setsid: %.100s", strerror(errno));
 
+#ifdef CLIVER
+	fd = ktest_open(ttyname, O_RDWR|O_NOCTTY);
+#else
 	fd = open(ttyname, O_RDWR|O_NOCTTY);
+#endif
 	if (fd != -1) {
 		mysignal(SIGHUP, SIG_IGN);
 		ioctl(fd, TCVHUP, (char *)NULL);
@@ -271,7 +282,11 @@ pty_make_controlling_tty(int *ttyfd, const char *ttyname)
 
 	debug("Setting controlling tty using TCSETCTTY.");
 	ioctl(*ttyfd, TCSETCTTY, NULL);
+#ifdef CLIVER
+	fd = ktest_open("/dev/tty", O_RDWR);
+#else
 	fd = open("/dev/tty", O_RDWR);
+#endif
 	if (fd < 0)
 		error("%.100s: %.100s", ttyname, strerror(errno));
 	close(*ttyfd);
@@ -280,7 +295,11 @@ pty_make_controlling_tty(int *ttyfd, const char *ttyname)
 
 	/* First disconnect from the old controlling tty. */
 #ifdef TIOCNOTTY
+#ifdef CLIVER
+	fd = ktest_open(_PATH_TTY, O_RDWR | O_NOCTTY);
+#else
 	fd = open(_PATH_TTY, O_RDWR | O_NOCTTY);
+#endif
 	if (fd >= 0) {
 		(void) ioctl(fd, TIOCNOTTY, NULL);
 		close(fd);
@@ -313,7 +332,11 @@ pty_make_controlling_tty(int *ttyfd, const char *ttyname)
 	vhangup();
 	mysignal(SIGHUP, old);
 #endif /* USE_VHANGUP */
+#ifdef CLIVER
+	fd = ktest_open(ttyname, O_RDWR);
+#else
 	fd = open(ttyname, O_RDWR);
+#endif
 	if (fd < 0) {
 		error("%.100s: %.100s", ttyname, strerror(errno));
 	} else {
@@ -325,7 +348,11 @@ pty_make_controlling_tty(int *ttyfd, const char *ttyname)
 #endif /* USE_VHANGUP */
 	}
 	/* Verify that we now have a controlling tty. */
+#ifdef CLIVER
+	fd = ktest_open(_PATH_TTY, O_WRONLY);
+#else
 	fd = open(_PATH_TTY, O_WRONLY);
+#endif
 	if (fd < 0)
 		error("open /dev/tty failed - could not set controlling tty: %.100s",
 		    strerror(errno));

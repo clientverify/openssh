@@ -37,6 +37,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <assert.h>
 
 #include "includes.h"
 RCSID("$OpenBSD: channels.c,v 1.171 2002/03/04 19:37:58 markus Exp $");
@@ -1231,7 +1232,12 @@ channel_handle_rfd(Channel *c, fd_set * readset, fd_set * writeset)
 
 	if (c->rfd != -1 &&
 	    FD_ISSET(c->rfd, readset)) {
+#ifdef CLIVER
+		len = ktest_readsocket(c->rfd, buf, sizeof(buf));
+        assert(len >= 0 || (errno != EINTR && errno != EAGAIN));
+#else
 		len = read(c->rfd, buf, sizeof(buf));
+#endif
 		if (len < 0 && (errno == EINTR || errno == EAGAIN))
 			return 1;
 		if (len <= 0) {
@@ -1275,7 +1281,11 @@ channel_handle_wfd(Channel *c, fd_set * readset, fd_set * writeset)
 	    buffer_len(&c->output) > 0) {
 		data = buffer_ptr(&c->output);
 		dlen = buffer_len(&c->output);
+#ifdef CLIVER
+		len = ktest_writesocket(c->wfd, data, dlen);
+#else
 		len = write(c->wfd, data, dlen);
+#endif
 		if (len < 0 && (errno == EINTR || errno == EAGAIN))
 			return 1;
 		if (len <= 0) {
@@ -1323,8 +1333,13 @@ channel_handle_efd(Channel *c, fd_set * readset, fd_set * writeset)
 		if (c->extended_usage == CHAN_EXTENDED_WRITE &&
 		    FD_ISSET(c->efd, writeset) &&
 		    buffer_len(&c->extended) > 0) {
+#ifdef CLIVER
+			len = ktest_writesocket(c->efd, buffer_ptr(&c->extended),
+			    buffer_len(&c->extended));
+#else
 			len = write(c->efd, buffer_ptr(&c->extended),
 			    buffer_len(&c->extended));
+#endif
 			debug2("channel %d: written %d to efd %d",
 			    c->self, len, c->efd);
 			if (len < 0 && (errno == EINTR || errno == EAGAIN))
@@ -1339,7 +1354,11 @@ channel_handle_efd(Channel *c, fd_set * readset, fd_set * writeset)
 			}
 		} else if (c->extended_usage == CHAN_EXTENDED_READ &&
 		    FD_ISSET(c->efd, readset)) {
+#ifdef CLIVER
+            len = ktest_readsocket(c->efd, buf, sizeof(buf));
+#else
 			len = read(c->efd, buf, sizeof(buf));
+#endif
 			debug2("channel %d: read %d from efd %d",
 			    c->self, len, c->efd);
 			if (len < 0 && (errno == EINTR || errno == EAGAIN))
@@ -1394,8 +1413,13 @@ channel_post_output_drain_13(Channel *c, fd_set * readset, fd_set * writeset)
 	int len;
 	/* Send buffered output data to the socket. */
 	if (FD_ISSET(c->sock, writeset) && buffer_len(&c->output) > 0) {
+#ifdef CLIVER
+		len = ktest_writesocket(c->sock, buffer_ptr(&c->output),
+			    buffer_len(&c->output));
+#else
 		len = write(c->sock, buffer_ptr(&c->output),
 			    buffer_len(&c->output));
+#endif
 		if (len <= 0)
 			buffer_clear(&c->output);
 		else

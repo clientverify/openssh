@@ -72,6 +72,7 @@ RCSID("$OpenBSD: sshd.c,v 1.228 2002/02/27 21:23:13 stevesk Exp $");
 #include "misc.h"
 #include "dispatch.h"
 #include "channels.h"
+#include "serverloop.h"
 
 #ifdef LIBWRAP
 #include <tcpd.h>
@@ -645,6 +646,7 @@ main(int ac, char **av)
             arg_ktest_mode = KTEST_PLAYBACK;
  		    arg_ktest_filename = optarg;
  		    ktest_start(arg_ktest_filename, arg_ktest_mode);
+            ktest_register_signal_handler(&ktest_signal_handler);
  		    fprintf(stdout, "Playing back from: %s\n", arg_ktest_filename);
             break;
 #endif
@@ -1096,7 +1098,11 @@ main(int ac, char **av)
 					close(newsock);
 					continue;
 				}
+#ifdef CLIVER
+				if (ktest_pipe(startup_p) == -1) {
+#else
 				if (pipe(startup_p) == -1) {
+#endif
 					close(newsock);
 					continue;
 				}

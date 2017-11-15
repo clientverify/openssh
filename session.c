@@ -57,6 +57,10 @@ RCSID("$OpenBSD: session.c,v 1.128 2002/02/16 00:51:44 markus Exp $");
 #include "canohost.h"
 #include "session.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 #ifdef HAVE_CYGWIN
 #include <windows.h>
 #include <sys/cygwin.h>
@@ -418,7 +422,11 @@ do_exec_no_pty(Session *s, const char *command)
 #endif /* USE_PAM */
 
 	/* Fork the child. */
+#ifdef CLIVER
+	if ((pid = ktest_fork(PARENT)) == 0) {
+#else
 	if ((pid = fork()) == 0) {
+#endif
 		/* Child.  Reinitialize the log since the pid has changed. */
 		log_init(__progname, options.log_level, options.log_facility, log_stderr);
 
@@ -533,7 +541,11 @@ do_exec_pty(Session *s, const char *command)
 #endif
 
 	/* Fork the child. */
+#ifdef CLIVER
+	if ((pid = ktest_fork(PARENT)) == 0) {
+#else
 	if ((pid = fork()) == 0) {
+#endif
 
 		/* Child.  Reinitialize the log because the pid has changed. */
 		log_init(__progname, options.log_level, options.log_facility, log_stderr);

@@ -89,6 +89,11 @@ static int client_alive_timeouts = 0;
 
 static volatile sig_atomic_t child_terminated = 0;	/* The child has terminated. */
 
+int ktest_signal_handler(int to){
+  child_terminated = 1;
+  debug("ktest_signal_handler child_terminated %d", child_terminated);
+}
+
 /* prototypes */
 static void server_init_dispatch(void);
 
@@ -100,7 +105,11 @@ static int notify_pipe[2];
 static void
 notify_setup(void)
 {
+#ifdef CLIVER
+	if (ktest_pipe(notify_pipe) < 0) {
+#else
 	if (pipe(notify_pipe) < 0) {
+#endif
 		error("pipe(notify_pipe) failed %s", strerror(errno));
 	} else if ((fcntl(notify_pipe[0], F_SETFD, 1) == -1) ||
 	    (fcntl(notify_pipe[1], F_SETFD, 1) == -1)) {
@@ -119,6 +128,8 @@ static void
 notify_parent(void)
 {
 	if (notify_pipe[1] != -1)
+       //this function is called by signal handler.  Do not record this wite!!!
+       //the read will be recorded and we don't support signal handlers with playback!
 		write(notify_pipe[1], "", 1);
 }
 static void
@@ -144,6 +155,10 @@ sigchld_handler(int sig)
 	debug("Received SIGCHLD.");
 	child_terminated = 1;
 	mysignal(SIGCHLD, sigchld_handler);
+#ifdef CLIVER
+    debug("sigchld_handler received SIGCHLD.");
+    ktest_record_signal(sig);
+#endif
 	notify_parent();
 	errno = save_errno;
 }
@@ -416,7 +431,11 @@ process_output(fd_set * writeset)
 	if (!compat20 && fdin != -1 && FD_ISSET(fdin, writeset)) {
 		data = buffer_ptr(&stdin_buffer);
 		dlen = buffer_len(&stdin_buffer);
+#ifdef CLIVER
+		len = ktest_writesocket(fdin, data, dlen);
+#else
 		len = write(fdin, data, dlen);
+#endif
 		if (len < 0 && (errno == EINTR || errno == EAGAIN)) {
 			/* do nothing */
 		} else if (len <= 0) {
@@ -734,7 +753,11 @@ collect_children(void)
 	sigaddset(&nset, SIGCHLD);
 	sigprocmask(SIG_BLOCK, &nset, &oset);
 	if (child_terminated) {
+#ifdef CLIVER
+		while ((pid = ktest_waitpid(-1, &status, WNOHANG)) > 0)
+#else
 		while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+#endif
 			session_close_by_pid(pid, status);
 		child_terminated = 0;
 	}

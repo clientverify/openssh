@@ -486,7 +486,11 @@ process_write(void)
 			error("process_write: seek failed");
 		} else {
 /* XXX ATOMICIO ? */
+#ifdef CLIVER
+			ret = ktest_writesocket(fd, data, len);
+#else
 			ret = write(fd, data, len);
+#endif
 			if (ret == -1) {
 				error("process_write: write failed");
 				status = errno_to_portable(errno);
@@ -1114,7 +1118,11 @@ main(int ac, char **av)
 		}
 		/* send oqueue to stdout */
 		if (FD_ISSET(out, wset)) {
+#ifdef CLIVER
+			len = ktest_writesocket(out, buffer_ptr(&oqueue), olen);
+#else
 			len = write(out, buffer_ptr(&oqueue), olen);
+#endif
 			if (len < 0) {
 				error("write error");
 				exit(1);

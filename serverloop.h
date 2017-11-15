@@ -23,5 +23,6 @@
 
 void    server_loop(pid_t, int, int, int);
 void    server_loop2(Authctxt *);
+int     ktest_signal_handler(int to);
 
 #endif

@@ -730,7 +730,11 @@ after_select(fd_set *readset, fd_set *writeset)
 			if (buffer_len(&sockets[i].output) > 0 &&
 			    FD_ISSET(sockets[i].fd, writeset)) {
 				do {
+#ifdef CLIVER
+					len = ktest_writesocket(sockets[i].fd,
+#else
 					len = write(sockets[i].fd,
+#endif
 					    buffer_ptr(&sockets[i].output),
 					    buffer_len(&sockets[i].output));
 					if (len == -1 && (errno == EAGAIN ||

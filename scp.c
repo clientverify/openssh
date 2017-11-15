@@ -1070,7 +1070,11 @@ lostconn(signo)
 	int signo;
 {
 	if (!iamremote)
+#ifdef CLIVER
+		ktest_writesocket(STDERR_FILENO, "lost connection\n", 16);
+#else
 		write(STDERR_FILENO, "lost connection\n", 16);
+#endif
 	if (signo)
 		_exit(1);
 	else

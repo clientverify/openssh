@@ -131,81 +131,72 @@ static char *auth_method = "unknown";
 
 struct mon_table {
 	enum monitor_reqtype type;
-	int flags;
 	int (*f)(int, Buffer *);
 };
 
-#define MON_ISAUTH	0x0004	/* Required for Authentication */
-#define MON_AUTHDECIDE	0x0008	/* Decides Authentication */
-#define MON_ONCE	0x0010	/* Disable after calling */
-
-#define MON_AUTH	(MON_ISAUTH|MON_AUTHDECIDE)
-
-#define MON_PERMIT	0x1000	/* Request is permitted */
-
 struct mon_table mon_dispatch_proto20[] = {
-    {MONITOR_REQ_MODULI, MON_ONCE, mm_answer_moduli},
-    {MONITOR_REQ_SIGN, MON_ONCE, mm_answer_sign},
-    {MONITOR_REQ_PWNAM, MON_ONCE, mm_answer_pwnamallow},
-    {MONITOR_REQ_AUTHSERV, MON_ONCE, mm_answer_authserv},
-    {MONITOR_REQ_AUTH2_READ_BANNER, MON_ONCE, mm_answer_auth2_read_banner},
-    {MONITOR_REQ_AUTHPASSWORD, MON_AUTH, mm_answer_authpassword},
+    {MONITOR_REQ_MODULI, mm_answer_moduli},
+    {MONITOR_REQ_SIGN, mm_answer_sign},
+    {MONITOR_REQ_PWNAM, mm_answer_pwnamallow},
+    {MONITOR_REQ_AUTHSERV, mm_answer_authserv},
+    {MONITOR_REQ_AUTH2_READ_BANNER, mm_answer_auth2_read_banner},
+    {MONITOR_REQ_AUTHPASSWORD, mm_answer_authpassword},
 #ifdef USE_PAM
-    {MONITOR_REQ_PAM_START, MON_ONCE, mm_answer_pam_start},
+    {MONITOR_REQ_PAM_START, mm_answer_pam_start},
 #endif
 #ifdef BSD_AUTH
-    {MONITOR_REQ_BSDAUTHQUERY, MON_ISAUTH, mm_answer_bsdauthquery},
-    {MONITOR_REQ_BSDAUTHRESPOND, MON_AUTH,mm_answer_bsdauthrespond},
+    {MONITOR_REQ_BSDAUTHQUERY, mm_answer_bsdauthquery},
+    {MONITOR_REQ_BSDAUTHRESPOND, mm_answer_bsdauthrespond},
 #endif
 #ifdef SKEY
-    {MONITOR_REQ_SKEYQUERY, MON_ISAUTH, mm_answer_skeyquery},
-    {MONITOR_REQ_SKEYRESPOND, MON_AUTH, mm_answer_skeyrespond},
+    {MONITOR_REQ_SKEYQUERY, mm_answer_skeyquery},
+    {MONITOR_REQ_SKEYRESPOND, mm_answer_skeyrespond},
 #endif
-    {MONITOR_REQ_KEYALLOWED, MON_ISAUTH, mm_answer_keyallowed},
-    {MONITOR_REQ_KEYVERIFY, MON_AUTH, mm_answer_keyverify},
-    {0, 0, NULL}
+    {MONITOR_REQ_KEYALLOWED, mm_answer_keyallowed},
+    {MONITOR_REQ_KEYVERIFY, mm_answer_keyverify},
+    {0, NULL}
 };
 
 struct mon_table mon_dispatch_postauth20[] = {
-    {MONITOR_REQ_MODULI, 0, mm_answer_moduli},
-    {MONITOR_REQ_SIGN, 0, mm_answer_sign},
-    {MONITOR_REQ_PTY, 0, mm_answer_pty},
-    {MONITOR_REQ_PTYCLEANUP, 0, mm_answer_pty_cleanup},
-    {MONITOR_REQ_TERM, 0, mm_answer_term},
-    {0, 0, NULL}
+    {MONITOR_REQ_MODULI, mm_answer_moduli},
+    {MONITOR_REQ_SIGN, mm_answer_sign},
+    {MONITOR_REQ_PTY, mm_answer_pty},
+    {MONITOR_REQ_PTYCLEANUP, mm_answer_pty_cleanup},
+    {MONITOR_REQ_TERM, mm_answer_term},
+    {0, NULL}
 };
 
 struct mon_table mon_dispatch_proto15[] = {
-    {MONITOR_REQ_PWNAM, MON_ONCE, mm_answer_pwnamallow},
-    {MONITOR_REQ_SESSKEY, MON_ONCE, mm_answer_sesskey},
-    {MONITOR_REQ_SESSID, MON_ONCE, mm_answer_sessid},
-    {MONITOR_REQ_AUTHPASSWORD, MON_AUTH, mm_answer_authpassword},
-    {MONITOR_REQ_RSAKEYALLOWED, MON_ISAUTH, mm_answer_rsa_keyallowed},
-    {MONITOR_REQ_KEYALLOWED, MON_ISAUTH, mm_answer_keyallowed},
-    {MONITOR_REQ_RSACHALLENGE, MON_ONCE, mm_answer_rsa_challenge},
-    {MONITOR_REQ_RSARESPONSE, MON_ONCE|MON_AUTHDECIDE, mm_answer_rsa_response},
+    {MONITOR_REQ_PWNAM, mm_answer_pwnamallow},
+    {MONITOR_REQ_SESSKEY, mm_answer_sesskey},
+    {MONITOR_REQ_SESSID, mm_answer_sessid},
+    {MONITOR_REQ_AUTHPASSWORD, mm_answer_authpassword},
+    {MONITOR_REQ_RSAKEYALLOWED, mm_answer_rsa_keyallowed},
+    {MONITOR_REQ_KEYALLOWED, mm_answer_keyallowed},
+    {MONITOR_REQ_RSACHALLENGE, mm_answer_rsa_challenge},
+    {MONITOR_REQ_RSARESPONSE, mm_answer_rsa_response},
 #ifdef USE_PAM
-    {MONITOR_REQ_PAM_START, MON_ONCE, mm_answer_pam_start},
+    {MONITOR_REQ_PAM_START, mm_answer_pam_start},
 #endif
 #ifdef BSD_AUTH
-    {MONITOR_REQ_BSDAUTHQUERY, MON_ISAUTH, mm_answer_bsdauthquery},
-    {MONITOR_REQ_BSDAUTHRESPOND, MON_AUTH,mm_answer_bsdauthrespond},
+    {MONITOR_REQ_BSDAUTHQUERY, mm_answer_bsdauthquery},
+    {MONITOR_REQ_BSDAUTHRESPOND, mm_answer_bsdauthrespond},
 #endif
 #ifdef SKEY
-    {MONITOR_REQ_SKEYQUERY, MON_ISAUTH, mm_answer_skeyquery},
-    {MONITOR_REQ_SKEYRESPOND, MON_AUTH, mm_answer_skeyrespond},
+    {MONITOR_REQ_SKEYQUERY, mm_answer_skeyquery},
+    {MONITOR_REQ_SKEYRESPOND, mm_answer_skeyrespond},
 #endif
 #ifdef USE_PAM
-    {MONITOR_REQ_PAM_START, MON_ONCE, mm_answer_pam_start},
+    {MONITOR_REQ_PAM_START, mm_answer_pam_start},
 #endif
-    {0, 0, NULL}
+    {0, NULL}
 };
 
 struct mon_table mon_dispatch_postauth15[] = {
-    {MONITOR_REQ_PTY, MON_ONCE, mm_answer_pty},
-    {MONITOR_REQ_PTYCLEANUP, MON_ONCE, mm_answer_pty_cleanup},
-    {MONITOR_REQ_TERM, 0, mm_answer_term},
-    {0, 0, NULL}
+    {MONITOR_REQ_PTY, mm_answer_pty},
+    {MONITOR_REQ_PTYCLEANUP, mm_answer_pty_cleanup},
+    {MONITOR_REQ_TERM, mm_answer_term},
+    {0, NULL}
 };
 
 struct mon_table *mon_dispatch;

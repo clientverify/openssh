@@ -208,8 +208,6 @@ monitor_permit(struct mon_table *ent, enum monitor_reqtype type, int permit)
 {
 	while (ent->f != NULL) {
 		if (ent->type == type) {
-			ent->flags &= ~MON_PERMIT;
-			ent->flags |= permit ? MON_PERMIT : 0;
 			return;
 		}
 		ent++;
@@ -222,10 +220,6 @@ monitor_permit_authentications(int permit)
 	struct mon_table *ent = mon_dispatch;
 
 	while (ent->f != NULL) {
-		if (ent->flags & MON_AUTH) {
-			ent->flags &= ~MON_PERMIT;
-			ent->flags |= permit ? MON_PERMIT : 0;
-		}
 		ent++;
 	}
 }
@@ -256,9 +250,6 @@ monitor_child_preauth(struct monitor *pmonitor)
 	while (!authenticated) {
 		authenticated = monitor_read(pmonitor, mon_dispatch, &ent);
 		if (authenticated) {
-			if (!(ent->flags & MON_AUTHDECIDE))
-				fatal("%s: unexpected authentication from %d",
-				    __FUNCTION__, ent->type);
 			if (authctxt->pw->pw_uid == 0 &&
 			    !auth_root_allowed(auth_method))
 				authenticated = 0;
@@ -268,12 +259,8 @@ monitor_child_preauth(struct monitor *pmonitor)
 #endif
 		}
 
-		if (ent->flags & MON_AUTHDECIDE) {
-			auth_log(authctxt, authenticated, auth_method,
-			    compat20 ? " ssh2" : "");
-			if (!authenticated)
-				authctxt->failures++;
-		}
+		if (!authenticated)
+			authctxt->failures++;
 	}
 
 	if (!authctxt->valid)
@@ -340,18 +327,8 @@ monitor_read(struct monitor *pmonitor, struct mon_table *ent,
 	}
 
 	if (ent->f != NULL) {
-		if (!(ent->flags & MON_PERMIT))
-			fatal("%s: unpermitted request %d", __FUNCTION__,
-			    type);
 		ret = (*ent->f)(pmonitor->m_sendfd, &m);
 		buffer_free(&m);
-
-		/* The child may use this request only once, disable it */
-		if (ent->flags & MON_ONCE) {
-			debug2("%s: %d used once, disabling now", __FUNCTION__,
-			    type);
-			ent->flags &= ~MON_PERMIT;
-		}
 
 		if (pent != NULL)
 			*pent = ent;

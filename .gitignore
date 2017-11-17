@@ -1,0 +1,43 @@
+#Executables
+ssh
+sshd
+ssh-add
+ssh-agent
+sftp
+sftp-server
+scp
+ssh-rand-helper
+ssh-keygen
+ssh-keyscan
+ssh_prng_cmds
+
+#configure stuff
+/autom4te.cache
+config.h
+config.h.in
+config.log
+config.status
+configure
+Makefile
+
+# Object files
+*.o
+
+# editor artefacts
+*.swp
+.#*
+#*#
+*~
+
+# Top level excludes
+/Makefile.bak
+/include
+/*.pc
+/rehash.time
+/scard/Ssh.bin
+*.out
+*.a
+
+
+# LLVM/Klee/Cliver files
+.*.bc

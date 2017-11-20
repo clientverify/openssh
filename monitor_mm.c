@@ -85,6 +85,7 @@ mm_create(struct mm_master *mmalloc, size_t size)
 	mm->mmalloc = mmalloc;
 
 #if  defined(HAVE_MMAP) && defined(MAP_ANON)
+    debug("mm_create calling mmap");
 	address = mmap(NULL, size, PROT_WRITE|PROT_READ, MAP_ANON|MAP_SHARED,
 	    -1, 0);
 	if (address == MAP_FAILED)

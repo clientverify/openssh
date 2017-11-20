@@ -561,6 +561,7 @@ privsep_preauth_child(void)
 static Authctxt*
 privsep_preauth(void)
 {
+    debug2("privsep_preauth entered");
 	Authctxt *authctxt = NULL;
 	int status;
 	pid_t pid;
@@ -572,23 +573,29 @@ privsep_preauth(void)
 
 	pid = fork();
 	if (pid == -1) {
-		fatal("fork of unprivileged child failed");
+		fatal("privsep_preauth: fork of unprivileged child failed");
 	} else if (pid != 0) {
-		debug2("Network child is on pid %d", pid);
+		debug2("privsep_preauth: Network child is on pid %d", pid);
 
 		close(pmonitor->m_recvfd);
+        //Marie: keep this, then go straight to demotion?
 		authctxt = monitor_child_preauth(pmonitor);
 		close(pmonitor->m_sendfd);
 
 		/* Sync memory */
 		monitor_sync(pmonitor);
 
+        //Marie: here we're waiting for the child's
+        //exit status.  Instead, we might want the child
+        //not to exit, but instead to make a request for
+        //promotion.
 		/* Wait for the child's exit status */
 		while (waitpid(pid, &status, 0) < 0)
 			if (errno != EINTR)
 				break;
 		return (authctxt);
 	} else {
+        debug2("privsep_preauth: demoting child");
 		/* child */
 
 		close(pmonitor->m_sendfd);
@@ -601,9 +608,13 @@ privsep_preauth(void)
 	return (NULL);
 }
 
+//Marie: we need to get rid of the fork in this function and
+//add a stub function changing the uid and gid of the child
+//process to that of the authenticated user.
 static void
 privsep_postauth(Authctxt *authctxt)
 {
+    debug2("privsep_postauth entered");
 	extern Authctxt *x_authctxt;
 
 	/* XXX - Remote port forwarding */
@@ -628,9 +639,9 @@ privsep_postauth(Authctxt *authctxt)
 
 	pmonitor->m_pid = fork();
 	if (pmonitor->m_pid == -1)
-		fatal("fork of unprivileged child failed");
+		fatal("privsep_postauth: fork of unprivileged child failed");
 	else if (pmonitor->m_pid != 0) {
-		debug2("User child is on pid %d", pmonitor->m_pid);
+		debug2("privsep_postauth: User child is on pid %d", pmonitor->m_pid);
 		close(pmonitor->m_recvfd);
 		monitor_child_postauth(pmonitor);
 
@@ -1454,6 +1465,7 @@ main(int ac, char **av)
 		do_ssh1_kex();
 		authctxt = do_authentication();
 	}
+    //Marie: this is where the child is exiting!
 	/*
 	 * If we use privilege separation, the unprivileged child transfers
 	 * the current keystate and exits
@@ -1469,11 +1481,21 @@ main(int ac, char **av)
 	 * file descriptor passing.
 	 */
 	if (use_privsep) {
+        debug("main(): USING use_privsep calling privsep_postauth");
+        //Marie: I think we want to replace this with an mm_elevate_priv
+        //call... where the monitor does its fake system call.
+        //This assumes the communication between the first child
+        //and monitor is identical to the second.
+        //Also, monitor never returns from privsep_postauth,
+        //so the rest of the main function will only be executed
+        //by the authenticated child.
 		privsep_postauth(authctxt);
 		/* the monitor process [priv] will not return */
 		if (!compat20)
 			destroy_sensitive_data();
-	}
+	} else {
+        debug("main(): NOT USING use_privsep");
+    }
 
 	/* Perform session preparation. */
 	do_authenticated(authctxt);

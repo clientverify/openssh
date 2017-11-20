@@ -201,29 +201,6 @@ struct mon_table mon_dispatch_postauth15[] = {
 
 struct mon_table *mon_dispatch;
 
-/* Specifies if a certain message is allowed at the moment */
-
-static void
-monitor_permit(struct mon_table *ent, enum monitor_reqtype type, int permit)
-{
-	while (ent->f != NULL) {
-		if (ent->type == type) {
-			return;
-		}
-		ent++;
-	}
-}
-
-static void
-monitor_permit_authentications(int permit)
-{
-	struct mon_table *ent = mon_dispatch;
-
-	while (ent->f != NULL) {
-		ent++;
-	}
-}
-
 Authctxt *
 monitor_child_preauth(struct monitor *pmonitor)
 {
@@ -236,12 +213,8 @@ monitor_child_preauth(struct monitor *pmonitor)
 		mon_dispatch = mon_dispatch_proto20;
 
 		/* Permit requests for moduli and signatures */
-		monitor_permit(mon_dispatch, MONITOR_REQ_MODULI, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_SIGN, 1);
 	} else {
 		mon_dispatch = mon_dispatch_proto15;
-
-		monitor_permit(mon_dispatch, MONITOR_REQ_SESSKEY, 1);
 	}
 
 	authctxt = authctxt_new();
@@ -279,19 +252,6 @@ monitor_child_postauth(struct monitor *pmonitor)
 {
 	if (compat20) {
 		mon_dispatch = mon_dispatch_postauth20;
-
-		/* Permit requests for moduli and signatures */
-		monitor_permit(mon_dispatch, MONITOR_REQ_MODULI, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_SIGN, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_TERM, 1);
-
-	} else {
-		mon_dispatch = mon_dispatch_postauth15;
-		monitor_permit(mon_dispatch, MONITOR_REQ_TERM, 1);
-	}
-	if (!no_pty_flag) {
-		monitor_permit(mon_dispatch, MONITOR_REQ_PTY, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_PTYCLEANUP, 1);
 	}
 
 	for (;;)
@@ -439,9 +399,6 @@ mm_answer_sign(int socket, Buffer *m)
 
 	mm_request_send(socket, MONITOR_ANS_SIGN, m);
 
-	/* Turn on permissions for getpwnam */
-	monitor_permit(mon_dispatch, MONITOR_REQ_PWNAM, 1);
-
 	return (0);
 }
 
@@ -493,19 +450,6 @@ mm_answer_pwnamallow(int socket, Buffer *m)
 	debug3("%s: sending MONITOR_ANS_PWNAM: %d", __FUNCTION__, allowed);
 	mm_request_send(socket, MONITOR_ANS_PWNAM, m);
 
-	/* For SSHv1 allow authentication now */
-	if (!compat20)
-		monitor_permit_authentications(1);
-	else {
-		/* Allow service/style information on the auth context */
-		monitor_permit(mon_dispatch, MONITOR_REQ_AUTHSERV, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_AUTH2_READ_BANNER, 1);
-	}
-
-#ifdef USE_PAM
-	monitor_permit(mon_dispatch, MONITOR_REQ_PAM_START, 1);
-#endif
-
 	return (0);
 }
 
@@ -527,8 +471,6 @@ int mm_answer_auth2_read_banner(int socket, Buffer *m)
 int
 mm_answer_authserv(int socket, Buffer *m)
 {
-	monitor_permit_authentications(1);
-
 	authctxt->service = buffer_get_string(m, NULL);
 	authctxt->style = buffer_get_string(m, NULL);
 	debug3("%s: service=%s, style=%s",
@@ -769,9 +711,6 @@ mm_answer_keyallowed(int socket, Buffer *m)
 	mm_append_debug(m);
 
 	mm_request_send(socket, MONITOR_ANS_KEYALLOWED, m);
-
-	if (type == MM_RSAHOSTKEY)
-		monitor_permit(mon_dispatch, MONITOR_REQ_RSACHALLENGE, allowed);
 
 	return (0);
 }
@@ -1054,9 +993,6 @@ mm_answer_sesskey(int socket, Buffer *m)
 	BIGNUM *p;
 	int rsafail;
 
-	/* Turn off permissions */
-	monitor_permit(mon_dispatch, MONITOR_REQ_SESSKEY, 1);
-
 	if ((p = BN_new()) == NULL)
 		fatal("%s: BN_new", __FUNCTION__);
 
@@ -1072,9 +1008,6 @@ mm_answer_sesskey(int socket, Buffer *m)
 
 	mm_request_send(socket, MONITOR_ANS_SESSKEY, m);
 
-	/* Turn on permissions for sessid passing */
-	monitor_permit(mon_dispatch, MONITOR_REQ_SESSID, 1);
-
 	return (0);
 }
 
@@ -1089,9 +1022,6 @@ mm_answer_sessid(int socket, Buffer *m)
 		fatal("%s: bad ssh1 session id", __FUNCTION__);
 	for (i = 0; i < 16; i++)
 		session_id[i] = buffer_get_char(m);
-
-	/* Turn on permissions for getpwnam */
-	monitor_permit(mon_dispatch, MONITOR_REQ_PWNAM, 1);
 
 	return (0);
 }
@@ -1137,8 +1067,6 @@ mm_answer_rsa_keyallowed(int socket, Buffer *m)
 
 	mm_request_send(socket, MONITOR_ANS_RSAKEYALLOWED, m);
 
-	monitor_permit(mon_dispatch, MONITOR_REQ_RSACHALLENGE, allowed);
-	monitor_permit(mon_dispatch, MONITOR_REQ_RSARESPONSE, 0);
 	return (0);
 }
 
@@ -1171,7 +1099,6 @@ mm_answer_rsa_challenge(int socket, Buffer *m)
 	debug3("%s sending reply", __FUNCTION__);
 	mm_request_send(socket, MONITOR_ANS_RSACHALLENGE, m);
 
-	monitor_permit(mon_dispatch, MONITOR_REQ_RSARESPONSE, 1);
 	return (0);
 }
 

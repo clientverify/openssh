@@ -731,7 +731,7 @@ AC_ARG_WITH(ssl-dir,
 		fi
 	]
 )
-LIBS="$LIBS -lcrypto"
+LIBS="$LIBS  -Wl,-Bstatic -lcrypto -Wl,-Bdynamic "
 AC_TRY_LINK_FUNC(RAND_add, AC_DEFINE(HAVE_OPENSSL),
 	[
 		dnl Check default openssl install dir

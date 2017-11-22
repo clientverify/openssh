@@ -53,6 +53,8 @@ RCSID("$OpenBSD: sshd.c,v 1.242 2002/05/15 15:47:49 mouring Exp $");
 #include <prot.h>
 #endif
 
+#include <assert.h>
+
 #include "ssh.h"
 #include "ssh1.h"
 #include "ssh2.h"
@@ -571,7 +573,7 @@ privsep_preauth(void)
 	/* Store a pointer to the kex for later rekeying */
 	pmonitor->m_pkex = &xxx_kex;
 
-	pid = fork();
+	pmonitor->m_pid = pid = fork();
 	if (pid == -1) {
 		fatal("privsep_preauth: fork of unprivileged child failed");
 	} else if (pid != 0) {
@@ -590,12 +592,11 @@ privsep_preauth(void)
         //not to exit, but instead to make a request for
         //promotion.
 		/* Wait for the child's exit status */
-		while (waitpid(pid, &status, 0) < 0)
-			if (errno != EINTR)
-				break;
+        assert(pmonitor->m_pid != 0);
 		return (authctxt);
 	} else {
         debug2("privsep_preauth: demoting child");
+        assert(pmonitor->m_pid == 0);
 		/* child */
 
 		close(pmonitor->m_sendfd);
@@ -608,6 +609,34 @@ privsep_preauth(void)
 	return (NULL);
 }
 
+static void
+dummy_do_setusercontext(){
+    debug("dummy_do_setusercontext");
+}
+
+static void
+worker_privsep_postauth(Authctxt *authctxt){
+//	close(pmonitor->m_sendfd);
+
+	/* Drop privileges */
+	dummy_do_setusercontext(authctxt->pw);
+
+	/* It is safe now to apply the key state */
+	monitor_apply_keystate(pmonitor);
+
+}
+
+
+static void
+monitor_privsep_postauth(){
+    debug2("privsep_postauth: User child is on pid %d", pmonitor->m_pid);
+    close(pmonitor->m_recvfd);
+    monitor_child_postauth(pmonitor);
+
+    /* NEVERREACHED */
+    exit(0);
+}
+
 //Marie: we need to get rid of the fork in this function and
 //add a stub function changing the uid and gid of the child
 //process to that of the authenticated user.
@@ -615,17 +644,6 @@ static void
 privsep_postauth(Authctxt *authctxt)
 {
     debug2("privsep_postauth entered");
-	extern Authctxt *x_authctxt;
-
-	/* XXX - Remote port forwarding */
-	x_authctxt = authctxt;
-
-	if (authctxt->pw->pw_uid == 0 || options.use_login) {
-		/* File descriptor passing is broken or root login */
-		monitor_apply_keystate(pmonitor);
-		use_privsep = 0;
-		return;
-	}
 
 	/* Authentication complete */
 	alarm(0);
@@ -641,24 +659,11 @@ privsep_postauth(Authctxt *authctxt)
 	if (pmonitor->m_pid == -1)
 		fatal("privsep_postauth: fork of unprivileged child failed");
 	else if (pmonitor->m_pid != 0) {
-		debug2("privsep_postauth: User child is on pid %d", pmonitor->m_pid);
-		close(pmonitor->m_recvfd);
-		monitor_child_postauth(pmonitor);
+        monitor_privsep_postauth();
+	} else {
+        worker_privsep_postauth(authctxt);
+    }
 
-		/* NEVERREACHED */
-		exit(0);
-	}
-
-	close(pmonitor->m_sendfd);
-
-	/* Demote the private keys to public keys. */
-	demote_sensitive_data();
-
-	/* Drop privileges */
-	do_setusercontext(authctxt->pw);
-
-	/* It is safe now to apply the key state */
-	monitor_apply_keystate(pmonitor);
 }
 
 static char *

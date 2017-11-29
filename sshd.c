@@ -579,10 +579,10 @@ privsep_preauth(void)
 	} else if (pid != 0) {
 		debug2("privsep_preauth: Network child is on pid %d", pid);
 
+
 		close(pmonitor->m_recvfd);
         //Marie: keep this, then go straight to demotion?
 		authctxt = monitor_child_preauth(pmonitor);
-		close(pmonitor->m_sendfd);
 
 		/* Sync memory */
 		monitor_sync(pmonitor);
@@ -621,8 +621,9 @@ worker_privsep_postauth(Authctxt *authctxt){
 	/* Drop privileges */
 	dummy_do_setusercontext(authctxt->pw);
 
-	/* It is safe now to apply the key state */
-	monitor_apply_keystate(pmonitor);
+    //Marie: previously the second worker got the initialized
+    //pam state from the monitor.
+    start_pam(authctxt->user);
 
 }
 
@@ -647,15 +648,8 @@ privsep_postauth(Authctxt *authctxt)
 
 	/* Authentication complete */
 	alarm(0);
-	if (startup_pipe != -1) {
-		close(startup_pipe);
-		startup_pipe = -1;
-	}
 
-	/* New socket pair */
-	monitor_reinit(pmonitor);
-
-	pmonitor->m_pid = fork();
+    //Marie: previously the second worker was forked here
 	if (pmonitor->m_pid == -1)
 		fatal("privsep_postauth: fork of unprivileged child failed");
 	else if (pmonitor->m_pid != 0) {
@@ -1477,7 +1471,7 @@ main(int ac, char **av)
 	 */
 	if (use_privsep) {
 		mm_send_keystate(pmonitor);
-		exit(0);
+        //Marie: previously the first worker exited here.
 	}
 
  authenticated:

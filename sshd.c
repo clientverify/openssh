@@ -601,9 +601,14 @@ privsep_preauth(void)
 
 		close(pmonitor->m_sendfd);
 
+#if 0 //We don't want to do this when we're verifying the child
+      //this is the dual of the request to change who the child is.
+      //because we've eliminated this call, the child is running with
+      //elevated priv.
 		/* Demote the child */
 		if (getuid() == 0 || geteuid() == 0)
 			privsep_preauth_child();
+#endif
 		setproctitle("%s", "[net]");
 	}
 	return (NULL);
@@ -616,10 +621,13 @@ dummy_do_setusercontext(){
 
 static void
 worker_privsep_postauth(Authctxt *authctxt){
-//	close(pmonitor->m_sendfd);
 
+    //Marie: we want to make the following a request to the monitor to
+    //change which user we are.
+    debug("worker_privsep_postauth: pid %d gid %d uid %d", getpid(), getgid(), getuid());
 	/* Drop privileges */
-	dummy_do_setusercontext(authctxt->pw);
+	do_setusercontext(authctxt->pw);
+    debug("worker_privsep_postauth: pid %d gid %d uid %d", getpid(), getgid(), getuid());
 
     //Marie: previously the second worker got the initialized
     //pam state from the monitor.
@@ -943,6 +951,7 @@ main(int ac, char **av)
 	}
 
 	debug("sshd version %.100s", SSH_VERSION);
+    debug("main: pid %d gid %d uid %d", getpid(), getgid(), getuid());
 
 	/* load private host keys */
 	sensitive_data.host_keys = xmalloc(options.num_host_key_files*sizeof(Key*));

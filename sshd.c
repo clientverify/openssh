@@ -622,16 +622,24 @@ dummy_do_setusercontext(){
 static void
 worker_privsep_postauth(Authctxt *authctxt){
 
+    char *password = "nerpnerp";
+    //Marie: previously the second worker got the initialized
+    //pam state from the monitor.
+    int pam_ret;
+    start_pam(authctxt->user);
+    pam_ret = auth_pam_password(authctxt, password);
+    assert(pam_ret);
+    pam_ret = do_pam_account(authctxt->user, NULL);
+    assert(pam_ret);
+
+
     //Marie: we want to make the following a request to the monitor to
     //change which user we are.
     debug("worker_privsep_postauth: pid %d gid %d uid %d", getpid(), getgid(), getuid());
-	/* Drop privileges */
-	do_setusercontext(authctxt->pw);
+  	/* Drop privileges */
+  	do_setusercontext(authctxt->pw);
     debug("worker_privsep_postauth: pid %d gid %d uid %d", getpid(), getgid(), getuid());
 
-    //Marie: previously the second worker got the initialized
-    //pam state from the monitor.
-    start_pam(authctxt->user);
 
 }
 

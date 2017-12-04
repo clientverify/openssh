@@ -286,10 +286,16 @@ void do_pam_session(char *username, const char *ttyname)
 			    pam_retval, PAM_STRERROR(__pamh, pam_retval));
 	}
 
+  debug("do_pam_session calling pam_open_session gid %d uid %d pid %d",
+      getgid(), getuid(), getpid());
 	pam_retval = pam_open_session(__pamh, 0);
+  //Marie: previously this was a fatal.  We failed this case when we tried to
+  //login as a user other than the user running sshd.
 	if (pam_retval != PAM_SUCCESS)
-		fatal("PAM session setup failed[%d]: %.200s",
-		    pam_retval, PAM_STRERROR(__pamh, pam_retval));
+    debug("do_pam_session pam_open_session failed[%d]: %.200s",
+        pam_retval, PAM_STRERROR(__pamh, pam_retval));
+  debug("do_pam_session finished pam_open_session gid %d uid %d pid %d",
+      getgid(), getuid(), getpid());
 
 	session_opened = 1;
 }

@@ -152,125 +152,87 @@ static pid_t monitor_child_pid;
 
 struct mon_table {
 	enum monitor_reqtype type;
-	int flags;
 	int (*f)(int, Buffer *);
 };
 
-#define MON_ISAUTH	0x0004	/* Required for Authentication */
-#define MON_AUTHDECIDE	0x0008	/* Decides Authentication */
-#define MON_ONCE	0x0010	/* Disable after calling */
-
-#define MON_AUTH	(MON_ISAUTH|MON_AUTHDECIDE)
-
-#define MON_PERMIT	0x1000	/* Request is permitted */
-
 struct mon_table mon_dispatch_proto20[] = {
-    {MONITOR_REQ_MODULI, MON_ONCE, mm_answer_moduli},
-    {MONITOR_REQ_SIGN, MON_ONCE, mm_answer_sign},
-    {MONITOR_REQ_PWNAM, MON_ONCE, mm_answer_pwnamallow},
-    {MONITOR_REQ_AUTHSERV, MON_ONCE, mm_answer_authserv},
-    {MONITOR_REQ_AUTH2_READ_BANNER, MON_ONCE, mm_answer_auth2_read_banner},
-    {MONITOR_REQ_AUTHPASSWORD, MON_AUTH, mm_answer_authpassword},
+    {MONITOR_REQ_MODULI, mm_answer_moduli},
+    {MONITOR_REQ_SIGN, mm_answer_sign},
+    {MONITOR_REQ_PWNAM, mm_answer_pwnamallow},
+    {MONITOR_REQ_AUTHSERV, mm_answer_authserv},
+    {MONITOR_REQ_AUTH2_READ_BANNER, mm_answer_auth2_read_banner},
+    {MONITOR_REQ_AUTHPASSWORD, mm_answer_authpassword},
 #ifdef USE_PAM
-    {MONITOR_REQ_PAM_START, MON_ONCE, mm_answer_pam_start},
-    {MONITOR_REQ_PAM_ACCOUNT, 0, mm_answer_pam_account},
-    {MONITOR_REQ_PAM_INIT_CTX, MON_ISAUTH, mm_answer_pam_init_ctx},
-    {MONITOR_REQ_PAM_QUERY, MON_ISAUTH, mm_answer_pam_query},
-    {MONITOR_REQ_PAM_RESPOND, MON_ISAUTH, mm_answer_pam_respond},
-    {MONITOR_REQ_PAM_FREE_CTX, MON_ONCE|MON_AUTHDECIDE, mm_answer_pam_free_ctx},
+    {MONITOR_REQ_PAM_START, mm_answer_pam_start},
+    {MONITOR_REQ_PAM_ACCOUNT, mm_answer_pam_account},
+    {MONITOR_REQ_PAM_INIT_CTX, mm_answer_pam_init_ctx},
+    {MONITOR_REQ_PAM_QUERY, mm_answer_pam_query},
+    {MONITOR_REQ_PAM_RESPOND, mm_answer_pam_respond},
+    {MONITOR_REQ_PAM_FREE_CTX, mm_answer_pam_free_ctx},
 #endif
 #ifdef BSD_AUTH
-    {MONITOR_REQ_BSDAUTHQUERY, MON_ISAUTH, mm_answer_bsdauthquery},
-    {MONITOR_REQ_BSDAUTHRESPOND, MON_AUTH,mm_answer_bsdauthrespond},
+    {MONITOR_REQ_BSDAUTHQUERY, mm_answer_bsdauthquery},
+    {MONITOR_REQ_BSDAUTHRESPOND, mm_answer_bsdauthrespond},
 #endif
 #ifdef SKEY
-    {MONITOR_REQ_SKEYQUERY, MON_ISAUTH, mm_answer_skeyquery},
-    {MONITOR_REQ_SKEYRESPOND, MON_AUTH, mm_answer_skeyrespond},
+    {MONITOR_REQ_SKEYQUERY, mm_answer_skeyquery},
+    {MONITOR_REQ_SKEYRESPOND, mm_answer_skeyrespond},
 #endif
-    {MONITOR_REQ_KEYALLOWED, MON_ISAUTH, mm_answer_keyallowed},
-    {MONITOR_REQ_KEYVERIFY, MON_AUTH, mm_answer_keyverify},
+    {MONITOR_REQ_KEYALLOWED, mm_answer_keyallowed},
+    {MONITOR_REQ_KEYVERIFY, mm_answer_keyverify},
 #ifdef GSSAPI
-    {MONITOR_REQ_GSSSETUP, MON_ISAUTH, mm_answer_gss_setup_ctx},
-    {MONITOR_REQ_GSSSTEP, MON_ISAUTH, mm_answer_gss_accept_ctx},
-    {MONITOR_REQ_GSSUSEROK, MON_AUTH, mm_answer_gss_userok},
+    {MONITOR_REQ_GSSSETUP, mm_answer_gss_setup_ctx},
+    {MONITOR_REQ_GSSSTEP, mm_answer_gss_accept_ctx},
+    {MONITOR_REQ_GSSUSEROK, mm_answer_gss_userok},
 #endif
     {0, 0, NULL}
 };
 
 struct mon_table mon_dispatch_postauth20[] = {
-    {MONITOR_REQ_MODULI, 0, mm_answer_moduli},
-    {MONITOR_REQ_SIGN, 0, mm_answer_sign},
-    {MONITOR_REQ_PTY, 0, mm_answer_pty},
-    {MONITOR_REQ_PTYCLEANUP, 0, mm_answer_pty_cleanup},
-    {MONITOR_REQ_TERM, 0, mm_answer_term},
-    {0, 0, NULL}
+    {MONITOR_REQ_MODULI, mm_answer_moduli},
+    {MONITOR_REQ_SIGN, mm_answer_sign},
+    {MONITOR_REQ_PTY, mm_answer_pty},
+    {MONITOR_REQ_PTYCLEANUP, mm_answer_pty_cleanup},
+    {MONITOR_REQ_TERM, mm_answer_term},
+    {0, NULL}
 };
 
 struct mon_table mon_dispatch_proto15[] = {
-    {MONITOR_REQ_PWNAM, MON_ONCE, mm_answer_pwnamallow},
-    {MONITOR_REQ_SESSKEY, MON_ONCE, mm_answer_sesskey},
-    {MONITOR_REQ_SESSID, MON_ONCE, mm_answer_sessid},
-    {MONITOR_REQ_AUTHPASSWORD, MON_AUTH, mm_answer_authpassword},
-    {MONITOR_REQ_RSAKEYALLOWED, MON_ISAUTH, mm_answer_rsa_keyallowed},
-    {MONITOR_REQ_KEYALLOWED, MON_ISAUTH, mm_answer_keyallowed},
-    {MONITOR_REQ_RSACHALLENGE, MON_ONCE, mm_answer_rsa_challenge},
-    {MONITOR_REQ_RSARESPONSE, MON_ONCE|MON_AUTHDECIDE, mm_answer_rsa_response},
+    {MONITOR_REQ_PWNAM, mm_answer_pwnamallow},
+    {MONITOR_REQ_SESSKEY, mm_answer_sesskey},
+    {MONITOR_REQ_SESSID, mm_answer_sessid},
+    {MONITOR_REQ_AUTHPASSWORD, mm_answer_authpassword},
+    {MONITOR_REQ_RSAKEYALLOWED, mm_answer_rsa_keyallowed},
+    {MONITOR_REQ_KEYALLOWED, mm_answer_keyallowed},
+    {MONITOR_REQ_RSACHALLENGE, mm_answer_rsa_challenge},
+    {MONITOR_REQ_RSARESPONSE, mm_answer_rsa_response},
 #ifdef BSD_AUTH
-    {MONITOR_REQ_BSDAUTHQUERY, MON_ISAUTH, mm_answer_bsdauthquery},
-    {MONITOR_REQ_BSDAUTHRESPOND, MON_AUTH,mm_answer_bsdauthrespond},
+    {MONITOR_REQ_BSDAUTHQUERY, mm_answer_bsdauthquery},
+    {MONITOR_REQ_BSDAUTHRESPOND, mm_answer_bsdauthrespond},
 #endif
 #ifdef SKEY
-    {MONITOR_REQ_SKEYQUERY, MON_ISAUTH, mm_answer_skeyquery},
-    {MONITOR_REQ_SKEYRESPOND, MON_AUTH, mm_answer_skeyrespond},
+    {MONITOR_REQ_SKEYQUERY, mm_answer_skeyquery},
+    {MONITOR_REQ_SKEYRESPOND, mm_answer_skeyrespond},
 #endif
 #ifdef USE_PAM
-    {MONITOR_REQ_PAM_START, MON_ONCE, mm_answer_pam_start},
-    {MONITOR_REQ_PAM_ACCOUNT, 0, mm_answer_pam_account},
-    {MONITOR_REQ_PAM_INIT_CTX, MON_ISAUTH, mm_answer_pam_init_ctx},
-    {MONITOR_REQ_PAM_QUERY, MON_ISAUTH, mm_answer_pam_query},
-    {MONITOR_REQ_PAM_RESPOND, MON_ISAUTH, mm_answer_pam_respond},
-    {MONITOR_REQ_PAM_FREE_CTX, MON_ONCE|MON_AUTHDECIDE, mm_answer_pam_free_ctx},
+    {MONITOR_REQ_PAM_START, mm_answer_pam_start},
+    {MONITOR_REQ_PAM_ACCOUNT, mm_answer_pam_account},
+    {MONITOR_REQ_PAM_INIT_CTX, mm_answer_pam_init_ctx},
+    {MONITOR_REQ_PAM_QUERY, mm_answer_pam_query},
+    {MONITOR_REQ_PAM_RESPOND, mm_answer_pam_respond},
+    {MONITOR_REQ_PAM_FREE_CTX, mm_answer_pam_free_ctx},
 #endif
-    {0, 0, NULL}
+    {0, NULL}
 };
 
 struct mon_table mon_dispatch_postauth15[] = {
-    {MONITOR_REQ_PTY, MON_ONCE, mm_answer_pty},
-    {MONITOR_REQ_PTYCLEANUP, MON_ONCE, mm_answer_pty_cleanup},
-    {MONITOR_REQ_TERM, 0, mm_answer_term},
-    {0, 0, NULL}
+    {MONITOR_REQ_PTY, mm_answer_pty},
+    {MONITOR_REQ_PTYCLEANUP, mm_answer_pty_cleanup},
+    {MONITOR_REQ_TERM, mm_answer_term},
+    {0, NULL}
 };
 
 struct mon_table *mon_dispatch;
-
-/* Specifies if a certain message is allowed at the moment */
-
-static void
-monitor_permit(struct mon_table *ent, enum monitor_reqtype type, int permit)
-{
-	while (ent->f != NULL) {
-		if (ent->type == type) {
-			ent->flags &= ~MON_PERMIT;
-			ent->flags |= permit ? MON_PERMIT : 0;
-			return;
-		}
-		ent++;
-	}
-}
-
-static void
-monitor_permit_authentications(int permit)
-{
-	struct mon_table *ent = mon_dispatch;
-
-	while (ent->f != NULL) {
-		if (ent->flags & MON_AUTH) {
-			ent->flags &= ~MON_PERMIT;
-			ent->flags |= permit ? MON_PERMIT : 0;
-		}
-		ent++;
-	}
-}
 
 Authctxt *
 monitor_child_preauth(struct monitor *pmonitor)
@@ -282,14 +244,8 @@ monitor_child_preauth(struct monitor *pmonitor)
 
 	if (compat20) {
 		mon_dispatch = mon_dispatch_proto20;
-
-		/* Permit requests for moduli and signatures */
-		monitor_permit(mon_dispatch, MONITOR_REQ_MODULI, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_SIGN, 1);
 	} else {
 		mon_dispatch = mon_dispatch_proto15;
-
-		monitor_permit(mon_dispatch, MONITOR_REQ_SESSKEY, 1);
 	}
 
 	authctxt = authctxt_new();
@@ -298,9 +254,6 @@ monitor_child_preauth(struct monitor *pmonitor)
 	while (!authenticated) {
 		authenticated = monitor_read(pmonitor, mon_dispatch, &ent);
 		if (authenticated) {
-			if (!(ent->flags & MON_AUTHDECIDE))
-				fatal("%s: unexpected authentication from %d",
-				    __func__, ent->type);
 			if (authctxt->pw->pw_uid == 0 &&
 			    !auth_root_allowed(auth_method))
 				authenticated = 0;
@@ -318,12 +271,8 @@ monitor_child_preauth(struct monitor *pmonitor)
 #endif
 		}
 
-		if (ent->flags & MON_AUTHDECIDE) {
-			auth_log(authctxt, authenticated, auth_method,
-			    compat20 ? " ssh2" : "");
-			if (!authenticated)
-				authctxt->failures++;
-		}
+		if (!authenticated)
+			authctxt->failures++;
 	}
 
 	if (!authctxt->valid)
@@ -358,18 +307,8 @@ monitor_child_postauth(struct monitor *pmonitor)
 
 	if (compat20) {
 		mon_dispatch = mon_dispatch_postauth20;
-
-		/* Permit requests for moduli and signatures */
-		monitor_permit(mon_dispatch, MONITOR_REQ_MODULI, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_SIGN, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_TERM, 1);
 	} else {
 		mon_dispatch = mon_dispatch_postauth15;
-		monitor_permit(mon_dispatch, MONITOR_REQ_TERM, 1);
-	}
-	if (!no_pty_flag) {
-		monitor_permit(mon_dispatch, MONITOR_REQ_PTY, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_PTYCLEANUP, 1);
 	}
 
 	for (;;)
@@ -407,18 +346,8 @@ monitor_read(struct monitor *pmonitor, struct mon_table *ent,
 	}
 
 	if (ent->f != NULL) {
-		if (!(ent->flags & MON_PERMIT))
-			fatal("%s: unpermitted request %d", __func__,
-			    type);
 		ret = (*ent->f)(pmonitor->m_sendfd, &m);
 		buffer_free(&m);
-
-		/* The child may use this request only once, disable it */
-		if (ent->flags & MON_ONCE) {
-			debug2("%s: %d used once, disabling now", __func__,
-			    type);
-			ent->flags &= ~MON_PERMIT;
-		}
 
 		if (pent != NULL)
 			*pent = ent;
@@ -534,9 +463,6 @@ mm_answer_sign(int socket, Buffer *m)
 
 	mm_request_send(socket, MONITOR_ANS_SIGN, m);
 
-	/* Turn on permissions for getpwnam */
-	monitor_permit(mon_dispatch, MONITOR_REQ_PWNAM, 1);
-
 	return (0);
 }
 
@@ -588,20 +514,6 @@ mm_answer_pwnamallow(int socket, Buffer *m)
 	debug3("%s: sending MONITOR_ANS_PWNAM: %d", __func__, allowed);
 	mm_request_send(socket, MONITOR_ANS_PWNAM, m);
 
-	/* For SSHv1 allow authentication now */
-	if (!compat20)
-		monitor_permit_authentications(1);
-	else {
-		/* Allow service/style information on the auth context */
-		monitor_permit(mon_dispatch, MONITOR_REQ_AUTHSERV, 1);
-		monitor_permit(mon_dispatch, MONITOR_REQ_AUTH2_READ_BANNER, 1);
-	}
-
-#ifdef USE_PAM
-	if (options.use_pam)
-		monitor_permit(mon_dispatch, MONITOR_REQ_PAM_START, 1);
-#endif
-
 	return (0);
 }
 
@@ -623,8 +535,6 @@ int mm_answer_auth2_read_banner(int socket, Buffer *m)
 int
 mm_answer_authserv(int socket, Buffer *m)
 {
-	monitor_permit_authentications(1);
-
 	authctxt->service = buffer_get_string(m, NULL);
 	authctxt->style = buffer_get_string(m, NULL);
 	debug3("%s: service=%s, style=%s",
@@ -791,8 +701,6 @@ mm_answer_pam_start(int socket, Buffer *m)
 
 	xfree(user);
 
-	monitor_permit(mon_dispatch, MONITOR_REQ_PAM_ACCOUNT, 1);
-
 	return (0);
 }
 
@@ -826,7 +734,6 @@ mm_answer_pam_init_ctx(int socket, Buffer *m)
 	sshpam_authok = NULL;
 	buffer_clear(m);
 	if (sshpam_ctxt != NULL) {
-		monitor_permit(mon_dispatch, MONITOR_REQ_PAM_FREE_CTX, 1);
 		buffer_put_int(m, 1);
 	} else {
 		buffer_put_int(m, 0);
@@ -994,9 +901,6 @@ mm_answer_keyallowed(int socket, Buffer *m)
 	mm_append_debug(m);
 
 	mm_request_send(socket, MONITOR_ANS_KEYALLOWED, m);
-
-	if (type == MM_RSAHOSTKEY)
-		monitor_permit(mon_dispatch, MONITOR_REQ_RSACHALLENGE, allowed);
 
 	return (0);
 }
@@ -1290,9 +1194,6 @@ mm_answer_sesskey(int socket, Buffer *m)
 	BIGNUM *p;
 	int rsafail;
 
-	/* Turn off permissions */
-	monitor_permit(mon_dispatch, MONITOR_REQ_SESSKEY, 1);
-
 	if ((p = BN_new()) == NULL)
 		fatal("%s: BN_new", __func__);
 
@@ -1308,9 +1209,6 @@ mm_answer_sesskey(int socket, Buffer *m)
 
 	mm_request_send(socket, MONITOR_ANS_SESSKEY, m);
 
-	/* Turn on permissions for sessid passing */
-	monitor_permit(mon_dispatch, MONITOR_REQ_SESSID, 1);
-
 	return (0);
 }
 
@@ -1325,9 +1223,6 @@ mm_answer_sessid(int socket, Buffer *m)
 		fatal("%s: bad ssh1 session id", __func__);
 	for (i = 0; i < 16; i++)
 		session_id[i] = buffer_get_char(m);
-
-	/* Turn on permissions for getpwnam */
-	monitor_permit(mon_dispatch, MONITOR_REQ_PWNAM, 1);
 
 	return (0);
 }
@@ -1375,8 +1270,6 @@ mm_answer_rsa_keyallowed(int socket, Buffer *m)
 
 	mm_request_send(socket, MONITOR_ANS_RSAKEYALLOWED, m);
 
-	monitor_permit(mon_dispatch, MONITOR_REQ_RSACHALLENGE, allowed);
-	monitor_permit(mon_dispatch, MONITOR_REQ_RSARESPONSE, 0);
 	return (0);
 }
 
@@ -1408,8 +1301,6 @@ mm_answer_rsa_challenge(int socket, Buffer *m)
 
 	debug3("%s sending reply", __func__);
 	mm_request_send(socket, MONITOR_ANS_RSACHALLENGE, m);
-
-	monitor_permit(mon_dispatch, MONITOR_REQ_RSARESPONSE, 1);
 
 	xfree(blob);
 	key_free(key);
@@ -1756,9 +1647,6 @@ mm_answer_gss_setup_ctx(int socket, Buffer *m)
 
 	mm_request_send(socket,MONITOR_ANS_GSSSETUP, m);
 
-	/* Now we have a context, enable the step */
-	monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 1);
-
 	return (0);
 }
 
@@ -1784,11 +1672,6 @@ mm_answer_gss_accept_ctx(int socket, Buffer *m)
 
 	gss_release_buffer(&minor, &out);
 
-	/* Complete - now we can do signing */
-	if (major==GSS_S_COMPLETE) {
-		monitor_permit(mon_dispatch, MONITOR_REQ_GSSSTEP, 0);
-		monitor_permit(mon_dispatch, MONITOR_REQ_GSSUSEROK, 1);
-	}
 	return (0);
 }
 

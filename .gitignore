@@ -10,6 +10,7 @@ ssh-rand-helper
 ssh-keygen
 ssh-keyscan
 ssh_prng_cmds
+ssh-keysign
 
 #configure stuff
 /autom4te.cache

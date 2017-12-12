@@ -63,11 +63,7 @@ mm_send_fd(int socket, int fd)
 	msg.msg_iov = &vec;
 	msg.msg_iovlen = 1;
 
-#ifdef CLIVER
-	if ((n = ktest_sendmsg_fd(socket, &msg, 0)) == -1)
-#else
 	if ((n = sendmsg(socket, &msg, 0)) == -1)
-#endif
 		fatal("%s: sendmsg(%d): %s", __func__, fd,
 		    strerror(errno));
 	if (n != 1)

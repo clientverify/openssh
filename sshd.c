@@ -565,6 +565,7 @@ privsep_preauth_child(void)
 	memset(pw->pw_passwd, 0, strlen(pw->pw_passwd));
 	endpwent();
 
+#if 0
 	/* Change our root directory */
 	if (chroot(_PATH_PRIVSEP_CHROOT_DIR) == -1)
 		fatal("chroot(\"%s\"): %s", _PATH_PRIVSEP_CHROOT_DIR,
@@ -583,6 +584,7 @@ privsep_preauth_child(void)
 	if (setgroups(1, gidset) < 0)
 		fatal("setgroups: %.100s", strerror(errno));
 	permanently_set_uid(pw);
+#endif
 #endif
 }
 

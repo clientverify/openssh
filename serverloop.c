@@ -56,6 +56,10 @@ RCSID("$OpenBSD: serverloop.c,v 1.110 2003/06/24 08:23:46 markus Exp $");
 #include "misc.h"
 #include "kex.h"
 
+#ifdef CLIVER
+#include <openssl/KTest.h>
+#endif
+
 extern ServerOptions options;
 
 /* XXX */
@@ -90,6 +94,12 @@ static int client_alive_timeouts = 0;
 
 static volatile sig_atomic_t child_terminated = 0;	/* The child has terminated. */
 
+int ktest_signal_handler(int to){
+  child_terminated = 1;
+  debug("ktest_signal_handler child_terminated %d", child_terminated);
+  return 0;
+}
+
 /* prototypes */
 static void server_init_dispatch(void);
 
@@ -101,7 +111,11 @@ static int notify_pipe[2];
 static void
 notify_setup(void)
 {
+#ifdef CLIVER
+	if (ktest_pipe(notify_pipe) < 0) {
+#else
 	if (pipe(notify_pipe) < 0) {
+#endif
 		error("pipe(notify_pipe) failed %s", strerror(errno));
 	} else if ((fcntl(notify_pipe[0], F_SETFD, 1) == -1) ||
 	    (fcntl(notify_pipe[1], F_SETFD, 1) == -1)) {
@@ -120,6 +134,8 @@ static void
 notify_parent(void)
 {
 	if (notify_pipe[1] != -1)
+       //this function is called by signal handler.  Do not record this wite!!!
+       //the read will be recorded and we don't support signal handlers with playback!
 		write(notify_pipe[1], "", 1);
 }
 static void
@@ -146,6 +162,10 @@ sigchld_handler(int sig)
 	child_terminated = 1;
 #ifndef _UNICOS
 	mysignal(SIGCHLD, sigchld_handler);
+#ifdef CLIVER
+    debug("sigchld_handler received SIGCHLD.");
+    ktest_record_signal(sig);
+#endif //CLIVER
 #endif
 	notify_parent();
 	errno = save_errno;
@@ -323,7 +343,11 @@ wait_until_can_do_something(fd_set **readsetp, fd_set **writesetp, int *maxfdp,
 	}
 
 	/* Wait for something to happen, or the timeout to expire. */
+#ifdef CLIVER
+	ret = ktest_select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
+#else
 	ret = select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
+#endif
 
 	if (ret == -1) {
 		memset(*readsetp, 0, *nallocp);
@@ -348,7 +372,11 @@ process_input(fd_set * readset)
 
 	/* Read and buffer any input data from the client. */
 	if (FD_ISSET(connection_in, readset)) {
+#ifdef CLIVER
+		len = ktest_readsocket(connection_in, buf, sizeof(buf));
+#else
 		len = read(connection_in, buf, sizeof(buf));
+#endif
 		if (len == 0) {
 			verbose("Connection closed by %.100s",
 			    get_remote_ipaddr());
@@ -411,7 +439,11 @@ process_output(fd_set * writeset)
 	if (!compat20 && fdin != -1 && FD_ISSET(fdin, writeset)) {
 		data = buffer_ptr(&stdin_buffer);
 		dlen = buffer_len(&stdin_buffer);
+#ifdef CLIVER
+		len = ktest_writesocket(fdin, data, dlen);
+#else
 		len = write(fdin, data, dlen);
+#endif
 		if (len < 0 && (errno == EINTR || errno == EAGAIN)) {
 			/* do nothing */
 		} else if (len <= 0) {
@@ -729,7 +761,11 @@ collect_children(void)
 	sigaddset(&nset, SIGCHLD);
 	sigprocmask(SIG_BLOCK, &nset, &oset);
 	if (child_terminated) {
+#ifdef CLIVER
+		while ((pid = ktest_waitpid(-1, &status, WNOHANG)) > 0 ||
+#else
 		while ((pid = waitpid(-1, &status, WNOHANG)) > 0 ||
+#endif
 		    (pid < 0 && errno == EINTR))
 			if (pid > 0)
 				session_close_by_pid(pid, status);

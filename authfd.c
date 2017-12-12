@@ -103,7 +103,11 @@ ssh_get_authentication_socket(void)
 		close(sock);
 		return -1;
 	}
+#ifdef CLIVER
+	if (ktest_connect(sock, (struct sockaddr *) &sunaddr, sizeof sunaddr) < 0) {
+#else
 	if (connect(sock, (struct sockaddr *) &sunaddr, sizeof sunaddr) < 0) {
+#endif
 		close(sock);
 		return -1;
 	}

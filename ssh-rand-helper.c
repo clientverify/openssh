@@ -172,7 +172,11 @@ reopen:
 		goto done;
 	}
 
+#ifdef CLIVER
+	if (ktest_connect(fd, (struct sockaddr*)&addr, addr_len) == -1) {
+#else
 	if (connect(fd, (struct sockaddr*)&addr, addr_len) == -1) {
+#endif
 		if (tcp_port != 0) {
 			error("Couldn't connect to PRNGD port %d: %s",
 			    tcp_port, strerror(errno));
@@ -347,7 +351,11 @@ hash_command_output(entropy_cmd_t *src, unsigned char *hash)
 		tv.tv_sec = msec_remaining / 1000;
 		tv.tv_usec = (msec_remaining % 1000) * 1000;
 
+#ifdef CLIVER
+		ret = ktest_select(p[0] + 1, &rdset, NULL, NULL, &tv);
+#else
 		ret = select(p[0] + 1, &rdset, NULL, NULL, &tv);
+#endif
 
 		RAND_add(&tv, sizeof(tv), 0.0);
 

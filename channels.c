@@ -55,6 +55,7 @@ RCSID("$OpenBSD: channels.c,v 1.194 2003/08/29 10:04:36 markus Exp $");
 #include "authfd.h"
 #include "pathnames.h"
 #include "bufaux.h"
+#include <assert.h>
 
 /* -- channel core */
 
@@ -1352,7 +1353,12 @@ channel_handle_rfd(Channel *c, fd_set * readset, fd_set * writeset)
 
 	if (c->rfd != -1 &&
 	    FD_ISSET(c->rfd, readset)) {
+#ifdef CLIVER
+		len = ktest_readsocket(c->rfd, buf, sizeof(buf));
+    assert(len >= 0 || (errno != EINTR && errno != EAGAIN));
+#else
 		len = read(c->rfd, buf, sizeof(buf));
+#endif
 		if (len < 0 && (errno == EINTR || errno == EAGAIN))
 			return 1;
 		if (len <= 0) {
@@ -1401,7 +1407,11 @@ channel_handle_wfd(Channel *c, fd_set * readset, fd_set * writeset)
 		if (compat20 && c->wfd_isatty && dlen > 8*1024)
 			dlen = 8*1024;
 #endif
+#ifdef CLIVER
+		len = ktest_writesocket(c->wfd, data, dlen);
+#else
 		len = write(c->wfd, data, dlen);
+#endif
 		if (len < 0 && (errno == EINTR || errno == EAGAIN))
 			return 1;
 		if (len <= 0) {
@@ -1449,8 +1459,13 @@ channel_handle_efd(Channel *c, fd_set * readset, fd_set * writeset)
 		if (c->extended_usage == CHAN_EXTENDED_WRITE &&
 		    FD_ISSET(c->efd, writeset) &&
 		    buffer_len(&c->extended) > 0) {
+#ifdef CLIVER
+			len = ktest_writesocket(c->efd, buffer_ptr(&c->extended),
+			    buffer_len(&c->extended));
+#else
 			len = write(c->efd, buffer_ptr(&c->extended),
 			    buffer_len(&c->extended));
+#endif
 			debug2("channel %d: written %d to efd %d",
 			    c->self, len, c->efd);
 			if (len < 0 && (errno == EINTR || errno == EAGAIN))
@@ -1465,7 +1480,11 @@ channel_handle_efd(Channel *c, fd_set * readset, fd_set * writeset)
 			}
 		} else if (c->extended_usage == CHAN_EXTENDED_READ &&
 		    FD_ISSET(c->efd, readset)) {
+#ifdef CLIVER
+			len = ktest_readsocket(c->efd, buf, sizeof(buf));
+#else
 			len = read(c->efd, buf, sizeof(buf));
+#endif
 			debug2("channel %d: read %d from efd %d",
 			    c->self, len, c->efd);
 			if (len < 0 && (errno == EINTR || errno == EAGAIN))
@@ -1521,8 +1540,13 @@ channel_post_output_drain_13(Channel *c, fd_set * readset, fd_set * writeset)
 
 	/* Send buffered output data to the socket. */
 	if (FD_ISSET(c->sock, writeset) && buffer_len(&c->output) > 0) {
+#ifdef CLIVER
+		len = ktest_writesocket(c->sock, buffer_ptr(&c->output),
+			    buffer_len(&c->output));
+#else
 		len = write(c->sock, buffer_ptr(&c->output),
 			    buffer_len(&c->output));
+#endif
 		if (len <= 0)
 			buffer_clear(&c->output);
 		else
@@ -1665,7 +1689,7 @@ channel_prepare_select(fd_set **readsetp, fd_set **writesetp, int *maxfdp,
 
 	n = MAX(*maxfdp, channel_max_fd);
 
-	sz = howmany(n+1, NFDBITS) * sizeof(fd_mask);
+	sz = sizeof(fd_set);
 	/* perhaps check sz < nalloc/2 and shrink? */
 	if (*readsetp == NULL || sz > *nallocp) {
 		*readsetp = xrealloc(*readsetp, sz);
@@ -2403,7 +2427,11 @@ connect_to(const char *host, u_short port)
 		}
 		if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0)
 			fatal("connect_to: F_SETFL: %s", strerror(errno));
+#ifdef CLIVER
+		if (ktest_connect(sock, ai->ai_addr, ai->ai_addrlen) < 0 &&
+#else
 		if (connect(sock, ai->ai_addr, ai->ai_addrlen) < 0 &&
+#endif
 		    errno != EINPROGRESS) {
 			error("connect_to %.100s port %s: %.100s", ntop, strport,
 			    strerror(errno));
@@ -2584,7 +2612,11 @@ connect_local_xsocket(u_int dnr)
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	snprintf(addr.sun_path, sizeof addr.sun_path, _PATH_UNIX_X, dnr);
+#ifdef CLIVER
+	if (ktest_connect(sock, (struct sockaddr *) & addr, sizeof(addr)) == 0)
+#else
 	if (connect(sock, (struct sockaddr *) & addr, sizeof(addr)) == 0)
+#endif
 		return sock;
 	close(sock);
 	error("connect %.100s: %.100s", addr.sun_path, strerror(errno));
@@ -2667,7 +2699,11 @@ x11_connect_display(void)
 			continue;
 		}
 		/* Connect it to the display. */
+#ifdef CLIVER
+		if (ktest_connect(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#else
 		if (connect(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#endif
 			debug2("connect %.100s port %d: %.100s", buf,
 			    6000 + display_number, strerror(errno));
 			close(sock);

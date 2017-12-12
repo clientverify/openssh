@@ -92,7 +92,11 @@ allowed_user(struct passwd * pw)
 	if (!options.use_pam && spw != NULL) {
 		time_t today;
 
+#ifdef CLIVER
+		today = ktest_time(NULL) / DAY;
+#else
 		today = time(NULL) / DAY;
+#endif
 		debug3("allowed_user: today %d sp_expire %d sp_lstchg %d"
 		    " sp_max %d", (int)today, (int)spw->sp_expire,
 		    (int)spw->sp_lstchg, (int)spw->sp_max);

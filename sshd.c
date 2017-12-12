@@ -376,9 +376,15 @@ sshd_exchange_identification(int sock_in, int sock_out)
 	server_version_string = xstrdup(buf);
 
 	/* Send our protocol version identification. */
+#ifdef CLIVER
+	if (atomicio(ktest_writesocket, sock_out, server_version_string,
+	    strlen(server_version_string))
+	    != strlen(server_version_string)) {
+#else
 	if (atomicio(vwrite, sock_out, server_version_string,
 	    strlen(server_version_string))
 	    != strlen(server_version_string)) {
+#endif
 		logit("Could not write ident string to %s", get_remote_ipaddr());
 		fatal_cleanup();
 	}
@@ -386,7 +392,11 @@ sshd_exchange_identification(int sock_in, int sock_out)
 	/* Read other sides version identification. */
 	memset(buf, 0, sizeof(buf));
 	for (i = 0; i < sizeof(buf) - 1; i++) {
+#ifdef CLIVER
+		if (atomicio(ktest_readsocket, sock_in, &buf[i], 1) != 1) {
+#else
 		if (atomicio(read, sock_in, &buf[i], 1) != 1) {
+#endif
 			logit("Did not receive identification string from %s",
 			    get_remote_ipaddr());
 			fatal_cleanup();
@@ -588,7 +598,15 @@ privsep_preauth(void)
 	/* Store a pointer to the kex for later rekeying */
 	pmonitor->m_pkex = &xxx_kex;
 
+#ifdef CLIVER
+	pid = ktest_fork(CHILD); //record and playback the first worker
+	if(pid == 0)
+		debug("fork first worker %d", getpid());
+	else
+		debug("fork monitor %d", getpid());
+#else
 	pid = fork();
+#endif
 	if (pid == -1) {
 		fatal("fork of unprivileged child failed");
 	} else if (pid != 0) {
@@ -653,7 +671,16 @@ privsep_postauth(Authctxt *authctxt)
 
 	/* New socket pair */
 	monitor_reinit(pmonitor);
+#ifdef CLIVER
+	pmonitor->m_pid = ktest_fork(CHILD);
+	if(pmonitor->m_pid == 0)
+		debug("fork second worker %d", getpid());
+	else
+		debug("fork monitor %d", getpid());
+#else
 	pmonitor->m_pid = fork();
+#endif
+
 	if (pmonitor->m_pid == -1)
 		fatal("fork of unprivileged child failed");
 	else if (pmonitor->m_pid != 0) {
@@ -1186,7 +1213,11 @@ main(int ac, char **av)
 			debug("Bind to port %s on %s.", strport, ntop);
 
 			/* Bind the socket to the desired port. */
+#ifdef CLIVER
+			if (ktest_bind(listen_sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#else
 			if (bind(listen_sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+#endif
 				if (!ai->ai_next)
 				    error("Bind to port %s on %s failed: %.200s.",
 					    strport, ntop, strerror(errno));
@@ -1262,7 +1293,7 @@ main(int ac, char **av)
 			if (fdset != NULL)
 				xfree(fdset);
 			fdsetsz = howmany(maxfd+1, NFDBITS) * sizeof(fd_mask);
-			fdset = (fd_set *)xmalloc(fdsetsz);
+			fdset = (fd_set *)xmalloc(sizeof(fd_set));
 			memset(fdset, 0, fdsetsz);
 
 			for (i = 0; i < num_listen_socks; i++)
@@ -1272,7 +1303,11 @@ main(int ac, char **av)
 					FD_SET(startup_pipes[i], fdset);
 
 			/* Wait in select until there is a connection. */
+#ifdef CLIVER
+			ret = ktest_select(maxfd+1, fdset, NULL, NULL, NULL);
+#else
 			ret = select(maxfd+1, fdset, NULL, NULL, NULL);
+#endif
 			if (ret < 0 && errno != EINTR)
 				error("select: %.100s", strerror(errno));
 			if (received_sigterm) {
@@ -1307,8 +1342,13 @@ main(int ac, char **av)
 				if (!FD_ISSET(listen_socks[i], fdset))
 					continue;
 				fromlen = sizeof(from);
+#ifdef CLIVER
+				newsock = ktest_accept(listen_socks[i], (struct sockaddr *)&from,
+				    &fromlen);
+#else
 				newsock = accept(listen_socks[i], (struct sockaddr *)&from,
 				    &fromlen);
+#endif
 				if (newsock < 0) {
 					if (errno != EINTR && errno != EWOULDBLOCK)
 						error("accept: %.100s", strerror(errno));
@@ -1324,7 +1364,11 @@ main(int ac, char **av)
 					close(newsock);
 					continue;
 				}
+#ifdef CLIVER
+				if (ktest_pipe(startup_p) == -1) {
+#else
 				if (pipe(startup_p) == -1) {
+#endif
 					close(newsock);
 					continue;
 				}
@@ -1361,7 +1405,11 @@ main(int ac, char **av)
 					 * the child process the connection. The
 					 * parent continues listening.
 					 */
+#ifdef CLIVER
+					if ((pid = ktest_fork(CHILD)) == 0) {
+#else
 					if ((pid = fork()) == 0) {
+#endif
 						/*
 						 * Child.  Close the listening and max_startup
 						 * sockets.  Start using the accepted socket.
@@ -1511,7 +1559,8 @@ main(int ac, char **av)
 	if (use_privsep) {
 		mm_send_keystate(pmonitor);
 #ifdef CLIVER
-   ktest_finish();
+    debug("first worker calling ktest_finish uid %d gid %d pid %d", getuid(), getgid(), getpid());
+    ktest_finish();
 #endif
 		exit(0);
 	}
@@ -1545,6 +1594,7 @@ main(int ac, char **av)
 		mm_terminate();
 
 #ifdef CLIVER
+  debug("second worker calling ktest_finish uid %d gid %d pid %d", getuid(), getgid(), getpid());
    ktest_finish();
 #endif
 

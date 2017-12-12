@@ -23,6 +23,9 @@ AC_PATH_PROG(TEST_MINUS_S_SH, ksh)
 AC_PATH_PROG(TEST_MINUS_S_SH, sh)
 AC_PATH_PROG(SH, sh)
 
+#Cliver Stuff:
+AC_DEFINE([CLIVER], [], [Description])
+
 # System features
 AC_SYS_LARGEFILE
 

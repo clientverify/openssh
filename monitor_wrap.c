@@ -53,6 +53,10 @@ RCSID("$OpenBSD: monitor_wrap.c,v 1.31 2003/08/28 12:54:34 markus Exp $");
 #include "channels.h"
 #include "session.h"
 
+#ifdef CLIVER
+#include <openssl/KTest.h>
+#endif
+
 #ifdef GSSAPI
 #include "ssh-gss.h"
 #endif
@@ -76,10 +80,17 @@ mm_request_send(int socket, enum monitor_reqtype type, Buffer *m)
 
 	PUT_32BIT(buf, mlen + 1);
 	buf[4] = (u_char) type;		/* 1st byte of payload is mesg-type */
+#ifdef CLIVER
+	if (atomicio(ktest_writesocket, socket, buf, sizeof(buf)) != sizeof(buf))
+		fatal("%s: ktest_writesocket", __func__);
+	if (atomicio(ktest_writesocket, socket, buffer_ptr(m), mlen) != mlen)
+		fatal("%s: ktest_writesocket", __func__); CLIVER
+#else
 	if (atomicio(vwrite, socket, buf, sizeof(buf)) != sizeof(buf))
 		fatal("%s: write", __func__);
 	if (atomicio(vwrite, socket, buffer_ptr(m), mlen) != mlen)
 		fatal("%s: write", __func__);
+#endif
 }
 
 void
@@ -91,7 +102,11 @@ mm_request_receive(int socket, Buffer *m)
 
 	debug3("%s entering", __func__);
 
+#ifdef CLIVER
+	res = atomicio(ktest_readsocket, socket, buf, sizeof(buf));
+#else
 	res = atomicio(read, socket, buf, sizeof(buf));
+#endif
 	if (res != sizeof(buf)) {
 		if (res == 0)
 			fatal_cleanup();
@@ -102,7 +117,11 @@ mm_request_receive(int socket, Buffer *m)
 		fatal("%s: read: bad msg_len %d", __func__, msg_len);
 	buffer_clear(m);
 	buffer_append_space(m, msg_len);
+#ifdef CLIVER
+	res = atomicio(ktest_readsocket, socket, buffer_ptr(m), msg_len);
+#else
 	res = atomicio(read, socket, buffer_ptr(m), msg_len);
+#endif
 	if (res != msg_len)
 		fatal("%s: read: %ld != msg_len", __func__, (long)res);
 }

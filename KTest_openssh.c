@@ -59,6 +59,16 @@ int ktest_pipe(int pipefd[2]){
   return ret;
 }
 
+int ktest_socketpair(int domain, int type, int protocol, int sv[2]){
+  int ret = socketpair(domain, type, protocol, sv);
+  assert(ret == 0); //assume success
+  if((arg_ktest_mode == KTEST_RECORD) || (arg_ktest_mode == KTEST_PLAYBACK)) {
+    insert_ktest_sockfd(sv[0]);
+    insert_ktest_sockfd(sv[1]);
+  }
+  return ret;
+}
+
 int ktest_open(const char *path, int oflag){
   int fd = open(path, oflag);
   assert(fd >= 0);

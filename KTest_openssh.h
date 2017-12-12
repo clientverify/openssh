@@ -7,5 +7,6 @@
 //enum KTEST_FORK {PARENT, CHILD};
 //pid_t ktest_fork(enum KTEST_FORK which);
 int ktest_pipe(int pipefd[2]);
+int ktest_socketpair(int domain, int type, int protocol, int sv[2]);
 int ktest_open(const char *path, int oflag);
 int ktest_openpty(int *ptyfd, int *ttyfd, char *name, const struct termios *termp, const struct winsize *winp);

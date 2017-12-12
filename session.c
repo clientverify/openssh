@@ -58,6 +58,10 @@ RCSID("$OpenBSD: session.c,v 1.163 2003/08/31 13:29:05 markus Exp $");
 #include "session.h"
 #include "monitor_wrap.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 #ifdef GSSAPI
 #include "ssh-gss.h"
 #endif
@@ -404,7 +408,11 @@ do_exec_no_pty(Session *s, const char *command)
 #endif /* USE_PAM */
 
 	/* Fork the child. */
+#ifdef CLIVER
+	if ((pid = ktest_fork(PARENT)) == 0) {
+#else
 	if ((pid = fork()) == 0) {
+#endif
 		fatal_remove_all_cleanups();
 
 		/* Child.  Reinitialize the log since the pid has changed. */
@@ -530,7 +538,11 @@ do_exec_pty(Session *s, const char *command)
 #endif
 
 	/* Fork the child. */
+#ifdef CLIVER
+	if ((pid = ktest_fork(PARENT)) == 0) {
+#else
 	if ((pid = fork()) == 0) {
+#endif
 		fatal_remove_all_cleanups();
 
 		/* Child.  Reinitialize the log because the pid has changed. */

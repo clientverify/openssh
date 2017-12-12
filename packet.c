@@ -832,8 +832,7 @@ packet_read_seqnr(u_int32_t *seqnr_p)
 	char buf[8192];
 	DBG(debug("packet_read()"));
 
-	setp = (fd_set *)xmalloc(howmany(connection_in+1, NFDBITS) *
-	    sizeof(fd_mask));
+	setp = (fd_set *)xmalloc(sizeof(fd_set));
 
 	/* Since we are blocking, ensure that all written packets have been sent. */
 	packet_write_wait();
@@ -862,12 +861,22 @@ packet_read_seqnr(u_int32_t *seqnr_p)
 		FD_SET(connection_in, setp);
 
 		/* Wait for some data to arrive. */
+#ifdef CLIVER
+		while (ktest_select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
+		    (errno == EAGAIN || errno == EINTR))
+			;
+#else
 		while (select(connection_in + 1, setp, NULL, NULL, NULL) == -1 &&
 		    (errno == EAGAIN || errno == EINTR))
 			;
+#endif
 
 		/* Read data from the socket. */
+#ifdef CLIVER
+		len = ktest_readsocket(connection_in, buf, sizeof(buf));
+#else
 		len = read(connection_in, buf, sizeof(buf));
+#endif
 		if (len == 0) {
 			logit("Connection closed by %.200s", get_remote_ipaddr());
 			fatal_cleanup();
@@ -1348,7 +1357,11 @@ packet_write_poll(void)
 	int len = buffer_len(&output);
 
 	if (len > 0) {
+#ifdef CLIVER
+		len = ktest_writesocket(connection_out, buffer_ptr(&output), len);
+#else
 		len = write(connection_out, buffer_ptr(&output), len);
+#endif
 		if (len <= 0) {
 			if (errno == EAGAIN)
 				return;
@@ -1376,9 +1389,15 @@ packet_write_wait(void)
 		memset(setp, 0, howmany(connection_out + 1, NFDBITS) *
 		    sizeof(fd_mask));
 		FD_SET(connection_out, setp);
+#ifdef CLIVER
+		while (ktest_select(connection_out + 1, NULL, setp, NULL, NULL) == -1 &&
+		    (errno == EAGAIN || errno == EINTR))
+			;
+#else
 		while (select(connection_out + 1, NULL, setp, NULL, NULL) == -1 &&
 		    (errno == EAGAIN || errno == EINTR))
 			;
+#endif
 		packet_write_poll();
 	}
 	xfree(setp);

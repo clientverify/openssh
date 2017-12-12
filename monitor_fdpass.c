@@ -63,7 +63,11 @@ mm_send_fd(int socket, int fd)
 	msg.msg_iov = &vec;
 	msg.msg_iovlen = 1;
 
+#ifdef CLIVER
+	if ((n = ktest_sendmsg_fd(socket, &msg, 0)) == -1)
+#else
 	if ((n = sendmsg(socket, &msg, 0)) == -1)
+#endif
 		fatal("%s: sendmsg(%d): %s", __func__, fd,
 		    strerror(errno));
 	if (n != 1)
@@ -102,7 +106,11 @@ mm_receive_fd(int socket)
 	msg.msg_controllen = sizeof(tmp);
 #endif
 
+#ifdef CLIVER
+	if ((n = ktest_recvmsg_fd(socket, &msg, 0)) == -1)
+#else
 	if ((n = recvmsg(socket, &msg, 0)) == -1)
+#endif
 		fatal("%s: recvmsg: %s", __func__, strerror(errno));
 	if (n != 1)
 		fatal("%s: recvmsg: expected received 1 got %ld",

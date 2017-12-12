@@ -38,7 +38,11 @@ get_remote_hostname(int socket, int use_dns)
 	/* Get IP address of client. */
 	fromlen = sizeof(from);
 	memset(&from, 0, sizeof(from));
+#ifdef CLIVER
+	if (ktest_getpeername(socket, (struct sockaddr *)&from, &fromlen) < 0) {
+#else
 	if (getpeername(socket, (struct sockaddr *)&from, &fromlen) < 0) {
+#endif
 		debug("getpeername failed: %.100s", strerror(errno));
 		fatal_cleanup();
 	}
@@ -232,8 +236,13 @@ get_socket_address(int socket, int remote, int flags)
 	memset(&addr, 0, sizeof(addr));
 
 	if (remote) {
+#ifdef CLIVER
+		if (ktest_getpeername(socket, (struct sockaddr *)&addr, &addrlen)
+		    < 0)
+#else
 		if (getpeername(socket, (struct sockaddr *)&addr, &addrlen)
 		    < 0)
+#endif
 			return NULL;
 	} else {
 		if (getsockname(socket, (struct sockaddr *)&addr, &addrlen)
@@ -334,7 +343,11 @@ get_sock_port(int sock, int local)
 			return 0;
 		}
 	} else {
+#ifdef CLIVER
+		if (ktest_getpeername(sock, (struct sockaddr *)&from, &fromlen) < 0) {
+#else
 		if (getpeername(sock, (struct sockaddr *)&from, &fromlen) < 0) {
+#endif
 			debug("getpeername failed: %.100s", strerror(errno));
 			fatal_cleanup();
 		}

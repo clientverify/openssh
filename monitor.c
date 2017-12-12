@@ -1579,7 +1579,11 @@ static void
 monitor_socketpair(int *pair)
 {
 #ifdef HAVE_SOCKETPAIR
+#ifdef CLIVER
+	if (ktest_socketpair(AF_UNIX, SOCK_STREAM, 0, pair) == -1)
+#else
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) == -1)
+#endif
 		fatal("%s: socketpair", __func__);
 #else
 	fatal("%s: UsePrivilegeSeparation=yes not supported",

@@ -145,7 +145,11 @@ key_save_private_rsa1(Key *key, const char *filename, const char *passphrase,
 		error("open %s failed: %s.", filename, strerror(errno));
 		return 0;
 	}
+#ifdef CLIVER
+	if (ktest_writesocket(fd, buffer_ptr(&encrypted), buffer_len(&encrypted)) !=
+#else
 	if (write(fd, buffer_ptr(&encrypted), buffer_len(&encrypted)) !=
+#endif
 	    buffer_len(&encrypted)) {
 		error("write to key file %s failed: %s", filename,
 		    strerror(errno));

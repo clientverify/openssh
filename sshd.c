@@ -854,7 +854,7 @@ main(int ac, char **av)
 #ifdef HAVE_SECUREWARE
 	(void)set_auth_parameters(ac, av);
 #endif
-	__progname = ssh_get_progname(av[0]);
+	__progname = "fake_progname"; //ssh_get_progname(av[0]);
 	init_rng();
 
 	/* Save argv. Duplicate so setproctitle emulation doesn't clobber it */

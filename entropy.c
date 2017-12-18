@@ -129,7 +129,11 @@ seed_rng(void)
 	memset(buf, '\0', sizeof(buf));
 
 #endif /* OPENSSL_PRNG_ONLY */
+#ifdef CLIVER
+	if (ktest_RAND_status() != 1)
+#else
 	if (RAND_status() != 1)
+#endif
 		fatal("PRNG is not seeded");
 }
 

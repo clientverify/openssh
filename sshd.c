@@ -1197,7 +1197,11 @@ main(int ac, char **av)
 				verbose("socket: %.100s", strerror(errno));
 				continue;
 			}
+#ifdef CLIVER
+			if (ktest_fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#else
 			if (fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#endif
 				error("listen_sock O_NONBLOCK: %s", strerror(errno));
 				close(listen_sock);
 				continue;
@@ -1229,11 +1233,19 @@ main(int ac, char **av)
 
 			/* Start listening on the port. */
 			logit("Server listening on %s port %s.", ntop, strport);
+#ifdef CLIVER
+			if (ktest_listen(listen_sock, 5) < 0)
+#else
 			if (listen(listen_sock, 5) < 0)
+#endif
 				fatal("listen: %.100s", strerror(errno));
 
 		}
-		freeaddrinfo(options.listen_addrs);
+#ifdef CLIVER
+        ktest_freeaddrinfo(options.listen_addrs);
+#else
+        freeaddrinfo(options.listen_addrs);
+#endif
 
 		if (!num_listen_socks)
 			fatal("Cannot bind any address.");

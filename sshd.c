@@ -1190,8 +1190,13 @@ main(int ac, char **av)
 				continue;
 			}
 			/* Create socket for listening. */
+#ifdef CLIVER
+			listen_sock = ktest_socket(ai->ai_family, ai->ai_socktype,
+			    ai->ai_protocol);
+#else
 			listen_sock = socket(ai->ai_family, ai->ai_socktype,
 			    ai->ai_protocol);
+#endif
 			if (listen_sock < 0) {
 				/* kernel may not support ipv6 */
 				verbose("socket: %.100s", strerror(errno));

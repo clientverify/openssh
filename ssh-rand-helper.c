@@ -166,7 +166,11 @@ get_random_bytes_prngd(unsigned char *buf, int len,
 	errors = 0;
 	rval = -1;
 reopen:
+#ifdef CLIVER
+	fd = ktest_socket(addr.ss_family, SOCK_STREAM, 0);
+#else
 	fd = socket(addr.ss_family, SOCK_STREAM, 0);
+#endif
 	if (fd == -1) {
 		error("Couldn't create socket: %s", strerror(errno));
 		goto done;

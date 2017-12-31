@@ -2417,7 +2417,11 @@ connect_to(const char *host, u_short port)
 			error("connect_to: getnameinfo failed");
 			continue;
 		}
+#ifdef CLIVER
+		sock = ktest_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+#else
 		sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+#endif
 		if (sock < 0) {
 			if (ai->ai_next == NULL)
 				error("socket: %.100s", strerror(errno));
@@ -2606,7 +2610,11 @@ connect_local_xsocket(u_int dnr)
 	int sock;
 	struct sockaddr_un addr;
 
+#ifdef CLIVER
+	sock = ktest_socket(AF_UNIX, SOCK_STREAM, 0);
+#else
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+#endif
 	if (sock < 0)
 		error("socket: %.100s", strerror(errno));
 	memset(&addr, 0, sizeof(addr));
@@ -2699,11 +2707,7 @@ x11_connect_display(void)
 			continue;
 		}
 		/* Connect it to the display. */
-#ifdef CLIVER
-		if (ktest_connect(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
-#else
 		if (connect(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
-#endif
 			debug2("connect %.100s port %d: %.100s", buf,
 			    6000 + display_number, strerror(errno));
 			close(sock);

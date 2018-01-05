@@ -445,6 +445,11 @@ mm_newkeys_from_blob(u_char *blob, int blen)
 		fatal("%s: bad ivlen: expected %u != %u", __func__,
 		    enc->block_size, len);
 
+    if(cipher_by_name(enc->name) != enc->cipher){
+        debug("mm_newkeys_from_blob cipher_by_name(enc->name) != enc->cipher, %s, cheating to make them equal", enc->name);
+        enc->cipher = cipher_by_name(enc->name);
+    }
+
 	if (enc->name == NULL || cipher_by_name(enc->name) != enc->cipher)
 		fatal("%s: bad cipher name %s or pointer %p", __func__,
 		    enc->name, enc->cipher);

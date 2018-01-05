@@ -1569,12 +1569,17 @@ mm_init_compression(struct mm_master *mm)
 }
 
 /* XXX */
-
+#ifdef CLIVER
+#define FD_CLOSEONEXEC(x) do { \
+	if (ktest_fcntl(x, F_SETFD, 1) == -1) \
+		fatal("fcntl(%d, F_SETFD)", x); \
+} while (0)
+#else
 #define FD_CLOSEONEXEC(x) do { \
 	if (fcntl(x, F_SETFD, 1) == -1) \
 		fatal("fcntl(%d, F_SETFD)", x); \
 } while (0)
-
+#endif
 static void
 monitor_socketpair(int *pair)
 {

@@ -1371,7 +1371,11 @@ main(int ac, char **av)
 						error("accept: %.100s", strerror(errno));
 					continue;
 				}
+#ifdef CLIVER
+				if (ktest_fcntl(newsock, F_SETFL, 0) < 0) {
+#else
 				if (fcntl(newsock, F_SETFL, 0) < 0) {
+#endif
 					error("newsock del O_NONBLOCK: %s", strerror(errno));
 					close(newsock);
 					continue;

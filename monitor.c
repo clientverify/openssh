@@ -499,16 +499,37 @@ mm_answer_pwnamallow(int socket, Buffer *m)
 	authctxt->pw = pwent;
 	authctxt->valid = 1;
 
+  char* pw_name   = pwent->pw_name;
+  char* pw_passwd = pwent->pw_passwd;
+  char* pw_gecos  = pwent->pw_gecos;
+  char* pw_dir    = pwent->pw_dir;
+  char* pw_shell  = pwent->pw_shell;
+
+  pwent->pw_name   = NULL;
+  pwent->pw_passwd = NULL;
+  pwent->pw_gecos  = NULL;
+  pwent->pw_dir    = NULL;
+  pwent->pw_shell  = NULL;
+
+  debug("pw_gid %d gid %d", pwent->pw_gid, getgid());
+  debug("pw_uid %d uid %d", pwent->pw_uid, getuid());
+
 	buffer_put_char(m, 1);
 	buffer_put_string(m, pwent, sizeof(struct passwd));
-	buffer_put_cstring(m, pwent->pw_name);
+	buffer_put_cstring(m, pw_name);
 	buffer_put_cstring(m, "*");
-	buffer_put_cstring(m, pwent->pw_gecos);
+	buffer_put_cstring(m, pw_gecos);
 #ifdef HAVE_PW_CLASS_IN_PASSWD
 	buffer_put_cstring(m, pwent->pw_class);
 #endif
-	buffer_put_cstring(m, pwent->pw_dir);
-	buffer_put_cstring(m, pwent->pw_shell);
+	buffer_put_cstring(m, pw_dir);
+	buffer_put_cstring(m, pw_shell);
+
+  pwent->pw_name   = pw_name;
+  pwent->pw_passwd = pw_passwd;
+  pwent->pw_gecos  = pw_gecos;
+  pwent->pw_dir    = pw_dir;
+  pwent->pw_shell  = pw_shell;
 
  out:
 	debug3("%s: sending MONITOR_ANS_PWNAM: %d", __func__, allowed);

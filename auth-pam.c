@@ -33,6 +33,10 @@
 #include "includes.h"
 RCSID("$Id: auth-pam.c,v 1.70 2003/09/02 13:18:53 djm Exp $");
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 #ifdef USE_PAM
 #include <security/pam_appl.h>
 
@@ -50,6 +54,8 @@ RCSID("$Id: auth-pam.c,v 1.70 2003/09/02 13:18:53 djm Exp $");
 #include "ssh2.h"
 #include "xmalloc.h"
 #include "auth-options.h"
+
+#undef USE_POSIX_THREADS
 
 extern ServerOptions options;
 
@@ -81,7 +87,11 @@ pthread_create(sp_pthread_t *thread, const void *attr __unused,
 {
 	pid_t pid;
 
+#ifdef CLIVER
+	switch ((pid = ktest_fork(PARENT))) {
+#else
 	switch ((pid = fork())) {
+#endif
 	case -1:
 		error("fork(): %s", strerror(errno));
 		return (-1);

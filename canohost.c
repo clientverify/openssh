@@ -124,7 +124,11 @@ get_remote_hostname(int socket, int use_dns)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = from.ss_family;
 	hints.ai_socktype = SOCK_STREAM;
+#ifdef CLIVER
+	if (ktest_getaddrinfo(name, NULL, &hints, &aitop) != 0) {
+#else
 	if (getaddrinfo(name, NULL, &hints, &aitop) != 0) {
+#endif
 		logit("reverse mapping checking getaddrinfo for %.700s "
 		    "failed - POSSIBLE BREAKIN ATTEMPT!", name);
 		return xstrdup(ntop);
@@ -136,7 +140,11 @@ get_remote_hostname(int socket, int use_dns)
 		    (strcmp(ntop, ntop2) == 0))
 				break;
 	}
+#ifdef CLIVER
+	ktest_freeaddrinfo(aitop);
+#else
 	freeaddrinfo(aitop);
+#endif
 	/* If we reached the end of the list, the address was not there. */
 	if (!ai) {
 		/* Address not found for the host name. */

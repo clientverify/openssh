@@ -29,6 +29,10 @@ RCSID("$OpenBSD: msg.c,v 1.6 2003/06/28 16:23:06 deraadt Exp $");
 #include "log.h"
 #include "atomicio.h"
 #include "msg.h"
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 
 void
 ssh_msg_send(int fd, u_char type, Buffer *m)
@@ -40,9 +44,17 @@ ssh_msg_send(int fd, u_char type, Buffer *m)
 
 	PUT_32BIT(buf, mlen + 1);
 	buf[4] = type;		/* 1st byte of payload is mesg-type */
+#ifdef CLIVER
+	if (atomicio(ktest_writesocket, fd, buf, sizeof(buf)) != sizeof(buf))
+#else
 	if (atomicio(vwrite, fd, buf, sizeof(buf)) != sizeof(buf))
+#endif
 		fatal("ssh_msg_send: write");
+#ifdef CLIVER
+	if (atomicio(ktest_writesocket, fd, buffer_ptr(m), mlen) != mlen)
+#else
 	if (atomicio(vwrite, fd, buffer_ptr(m), mlen) != mlen)
+#endif
 		fatal("ssh_msg_send: write");
 }
 
@@ -55,7 +67,11 @@ ssh_msg_recv(int fd, Buffer *m)
 
 	debug3("ssh_msg_recv entering");
 
+#ifdef CLIVER
+	res = atomicio(ktest_readsocket, fd, buf, sizeof(buf));
+#else
 	res = atomicio(read, fd, buf, sizeof(buf));
+#endif
 	if (res != sizeof(buf)) {
 		if (res == 0)
 			return -1;
@@ -66,7 +82,11 @@ ssh_msg_recv(int fd, Buffer *m)
 		fatal("ssh_msg_recv: read: bad msg_len %u", msg_len);
 	buffer_clear(m);
 	buffer_append_space(m, msg_len);
+#ifdef CLIVER
+	res = atomicio(ktest_readsocket, fd, buffer_ptr(m), msg_len);
+#else
 	res = atomicio(read, fd, buffer_ptr(m), msg_len);
+#endif
 	if (res != msg_len)
 		fatal("ssh_msg_recv: read: %ld != msg_len", (long)res);
 	return 0;

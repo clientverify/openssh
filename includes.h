@@ -13,6 +13,9 @@
  * called by a name other than "ssh" or "Secure Shell".
  */
 
+#undef HAVE_B64_PTON
+#undef HAVE___B64_PTON
+
 #ifndef INCLUDES_H
 #define INCLUDES_H
 

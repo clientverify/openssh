@@ -225,7 +225,11 @@ close_listen_socks(void)
 	int i;
 
 	for (i = 0; i < num_listen_socks; i++)
+#ifdef CLIVER
+		ktest_close(listen_socks[i]);
+#else
 		close(listen_socks[i]);
+#endif
 	num_listen_socks = -1;
 }
 
@@ -237,7 +241,11 @@ close_startup_pipes(void)
 	if (startup_pipes)
 		for (i = 0; i < options.max_startups; i++)
 			if (startup_pipes[i] != -1)
+#ifdef CLIVER
+				ktest_close(startup_pipes[i]);
+#else
 				close(startup_pipes[i]);
+#endif
 }
 
 /*
@@ -424,9 +432,15 @@ sshd_exchange_identification(int sock_in, int sock_out)
 	if (sscanf(client_version_string, "SSH-%d.%d-%[^\n]\n",
 	    &remote_major, &remote_minor, remote_version) != 3) {
 		s = "Protocol mismatch.\n";
+#ifdef CLIVER
+		(void) atomicio(ktest_writesocket, sock_out, s, strlen(s));
+		ktest_close(sock_in);
+		ktest_close(sock_out);
+#else
 		(void) atomicio(vwrite, sock_out, s, strlen(s));
 		close(sock_in);
 		close(sock_out);
+#endif
 		logit("Bad protocol version identification '%.100s' from %s",
 		    client_version_string, get_remote_ipaddr());
 		fatal_cleanup();
@@ -485,9 +499,15 @@ sshd_exchange_identification(int sock_in, int sock_out)
 
 	if (mismatch) {
 		s = "Protocol major versions differ.\n";
+#ifdef CLIVER
+		(void) atomicio(ktest_writesocket, sock_out, s, strlen(s));
+		ktest_close(sock_in);
+		ktest_close(sock_out);
+#else
 		(void) atomicio(vwrite, sock_out, s, strlen(s));
 		close(sock_in);
 		close(sock_out);
+#endif
 		logit("Protocol major versions differ for %s: %.200s vs. %.200s",
 		    get_remote_ipaddr(),
 		    server_version_string, client_version_string);
@@ -613,10 +633,17 @@ privsep_preauth(void)
 		fatal_remove_cleanup((void (*) (void *)) packet_close, NULL);
 
 		debug2("Network child is on pid %ld", (long)pid);
-
+#ifdef CLIVER
+		ktest_close(pmonitor->m_recvfd);
+#else
 		close(pmonitor->m_recvfd);
+#endif
 		authctxt = monitor_child_preauth(pmonitor);
+#ifdef CLIVER
+		ktest_close(pmonitor->m_sendfd);
+#else
 		close(pmonitor->m_sendfd);
+#endif
 
 		/* Sync memory */
 		monitor_sync(pmonitor);
@@ -633,7 +660,11 @@ privsep_preauth(void)
 	} else {
 		/* child */
 
+#ifdef CLIVER
+		ktest_close(pmonitor->m_sendfd);
+#else
 		close(pmonitor->m_sendfd);
+#endif
 
 		/* Demote the child */
 		if (getuid() == 0 || geteuid() == 0)
@@ -665,7 +696,11 @@ privsep_postauth(Authctxt *authctxt)
 	/* Authentication complete */
 	alarm(0);
 	if (startup_pipe != -1) {
+#ifdef CLIVER
+		ktest_close(startup_pipe);
+#else
 		close(startup_pipe);
+#endif
 		startup_pipe = -1;
 	}
 
@@ -687,14 +722,22 @@ privsep_postauth(Authctxt *authctxt)
 		fatal_remove_cleanup((void (*) (void *)) packet_close, NULL);
 
 		debug2("User child is on pid %ld", (long)pmonitor->m_pid);
+#ifdef CLIVER
+		ktest_close(pmonitor->m_recvfd);
+#else
 		close(pmonitor->m_recvfd);
+#endif
 		monitor_child_postauth(pmonitor);
 
 		/* NEVERREACHED */
 		exit(0);
 	}
 
+#ifdef CLIVER
+	ktest_close(pmonitor->m_sendfd);
+#else
 	close(pmonitor->m_sendfd);
+#endif
 
 	/* Demote the private keys to public keys. */
 	demote_sensitive_data();
@@ -1143,7 +1186,11 @@ main(int ac, char **av)
 		fd = open(_PATH_TTY, O_RDWR | O_NOCTTY);
 		if (fd >= 0) {
 			(void) ioctl(fd, TIOCNOTTY, NULL);
+#ifdef CLIVER
+			ktest_close(fd);
+#else
 			close(fd);
+#endif
 		}
 #endif /* TIOCNOTTY */
 	}
@@ -1208,7 +1255,11 @@ main(int ac, char **av)
 			if (fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
 #endif
 				error("listen_sock O_NONBLOCK: %s", strerror(errno));
+#ifdef CLIVER
+				ktest_close(listen_sock);
+#else
 				close(listen_sock);
+#endif
 				continue;
 			}
 			/*
@@ -1230,7 +1281,11 @@ main(int ac, char **av)
 				if (!ai->ai_next)
 				    error("Bind to port %s on %s failed: %.200s.",
 					    strport, ntop, strerror(errno));
+#ifdef CLIVER
+				ktest_close(listen_sock);
+#else
 				close(listen_sock);
+#endif
 				continue;
 			}
 			listen_socks[num_listen_socks] = listen_sock;
@@ -1351,7 +1406,11 @@ main(int ac, char **av)
 					 * after successful authentication
 					 * or if the child has died
 					 */
+#ifdef CLIVER
+					ktest_close(startup_pipes[i]);
+#else
 					close(startup_pipes[i]);
+#endif
 					startup_pipes[i] = -1;
 					startups--;
 				}
@@ -1377,20 +1436,29 @@ main(int ac, char **av)
 				if (fcntl(newsock, F_SETFL, 0) < 0) {
 #endif
 					error("newsock del O_NONBLOCK: %s", strerror(errno));
+#ifdef CLIVER
+					ktest_close(newsock);
+#else
 					close(newsock);
+#endif
 					continue;
 				}
 				if (drop_connection(startups) == 1) {
 					debug("drop connection #%d", startups);
+#ifdef CLIVER
+					ktest_close(newsock);
+#else
 					close(newsock);
+#endif
 					continue;
 				}
 #ifdef CLIVER
 				if (ktest_pipe(startup_p) == -1) {
+					ktest_close(newsock);
 #else
 				if (pipe(startup_p) == -1) {
-#endif
 					close(newsock);
+#endif
 					continue;
 				}
 
@@ -1468,7 +1536,11 @@ main(int ac, char **av)
 				arc4random_stir();
 
 				/* Close the new socket (the child is now taking care of it). */
+#ifdef CLIVER
+				ktest_close(newsock);
+#else
 				close(newsock);
+#endif
 			}
 			/* child process check (or debug mode) */
 			if (num_listen_socks < 0)

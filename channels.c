@@ -1354,7 +1354,7 @@ channel_handle_rfd(Channel *c, fd_set * readset, fd_set * writeset)
 	if (c->rfd != -1 &&
 	    FD_ISSET(c->rfd, readset)) {
 #ifdef CLIVER
-		len = ktest_readsocket(c->rfd, buf, sizeof(buf));
+		len = ktest_readsocket_or_error(c->rfd, buf, sizeof(buf));
     assert(len >= 0 || (errno != EINTR && errno != EAGAIN));
 #else
 		len = read(c->rfd, buf, sizeof(buf));

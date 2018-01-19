@@ -767,7 +767,7 @@ collect_children(void)
 	sigprocmask(SIG_BLOCK, &nset, &oset);
 	if (child_terminated) {
 #ifdef CLIVER
-		while ((pid = ktest_waitpid(-1, &status, WNOHANG)) > 0 ||
+		while ((pid = ktest_waitpid_or_error(-1, &status, WNOHANG)) > 0 ||
 #else
 		while ((pid = waitpid(-1, &status, WNOHANG)) > 0 ||
 #endif

@@ -84,7 +84,7 @@ mm_request_send(int socket, enum monitor_reqtype type, Buffer *m)
 	if (atomicio(ktest_writesocket, socket, buf, sizeof(buf)) != sizeof(buf))
 		fatal("%s: ktest_writesocket", __func__);
 	if (atomicio(ktest_writesocket, socket, buffer_ptr(m), mlen) != mlen)
-		fatal("%s: ktest_writesocket", __func__); CLIVER
+		fatal("%s: ktest_writesocket", __func__);
 #else
 	if (atomicio(vwrite, socket, buf, sizeof(buf)) != sizeof(buf))
 		fatal("%s: write", __func__);
@@ -685,7 +685,11 @@ mm_session_pty_cleanup2(void *session)
 	buffer_free(&m);
 
 	/* closed dup'ed master */
+#ifdef CLIVER
+	if (ktest_close(s->ptymaster) < 0)
+#else
 	if (close(s->ptymaster) < 0)
+#endif
 		error("close(s->ptymaster): %s", strerror(errno));
 
 	/* unlink pty from session */

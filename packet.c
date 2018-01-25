@@ -353,11 +353,21 @@ packet_close(void)
 		return;
 	initialized = 0;
 	if (connection_in == connection_out) {
+#ifdef CLIVER
+		ktest_shutdown(connection_out, SHUT_RDWR);
+		ktest_close(connection_out);
+#else
 		shutdown(connection_out, SHUT_RDWR);
 		close(connection_out);
+#endif
 	} else {
+#ifdef CLIVER
+		ktest_close(connection_in);
+		ktest_close(connection_out);
+#else
 		close(connection_in);
 		close(connection_out);
+#endif
 	}
 	buffer_free(&input);
 	buffer_free(&output);

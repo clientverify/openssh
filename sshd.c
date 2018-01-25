@@ -875,6 +875,7 @@ usage(void)
 int
 main(int ac, char **av)
 {
+  ktest_register_signal_handler(&ktest_signal_handler);
 	extern char *optarg;
 	extern int optind;
 	int opt, sock_in = 0, sock_out = 0, newsock, j, i, fdsetsz, on = 1;
@@ -936,7 +937,6 @@ main(int ac, char **av)
            arg_ktest_mode = KTEST_PLAYBACK;
            arg_ktest_filename = optarg;
            ktest_start(arg_ktest_filename, arg_ktest_mode);
-           ktest_register_signal_handler(&ktest_signal_handler);
            fprintf(stdout, "Playing back from: %s\n", arg_ktest_filename);
            break;
 #endif

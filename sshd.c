@@ -585,6 +585,7 @@ privsep_preauth_child(void)
 	memset(pw->pw_passwd, 0, strlen(pw->pw_passwd));
 	endpwent();
 
+#if 0
 	/* Change our root directory */
 	if (chroot(_PATH_PRIVSEP_CHROOT_DIR) == -1)
 		fatal("chroot(\"%s\"): %s", _PATH_PRIVSEP_CHROOT_DIR,
@@ -604,6 +605,7 @@ privsep_preauth_child(void)
 		fatal("setgroups: %.100s", strerror(errno));
 	permanently_set_uid(pw);
 #endif
+#endif //0
 }
 
 static Authctxt *
@@ -619,7 +621,7 @@ privsep_preauth(void)
 	pmonitor->m_pkex = &xxx_kex;
 
 #ifdef CLIVER
-	pid = ktest_fork(PARENT); //record the monitor and second worker
+	pid = ktest_fork(CHILD); //record and playback the first worker
 	if(pid == 0)
 		debug("fork first worker %d", getpid());
 	else

@@ -436,7 +436,11 @@ mm_newkeys_from_blob(u_char *blob, int blen)
 
 	/* Enc structure */
 	enc->name = buffer_get_string(&b, NULL);
-	buffer_get(&b, &enc->cipher, sizeof(enc->cipher));
+	//No longer send the cipher pointer, as will not
+	//match in verifcation.
+	//buffer_get(&b, &enc->cipher, sizeof(enc->cipher));
+	//Instead we get the cipher pointer by name.
+	enc->cipher = cipher_by_name(enc->name);
 	enc->enabled = buffer_get_int(&b);
 	enc->block_size = buffer_get_int(&b);
 	enc->key = buffer_get_string(&b, &enc->key_len);
@@ -444,11 +448,6 @@ mm_newkeys_from_blob(u_char *blob, int blen)
 	if (len != enc->block_size)
 		fatal("%s: bad ivlen: expected %u != %u", __func__,
 		    enc->block_size, len);
-
-    if(cipher_by_name(enc->name) != enc->cipher){
-        debug("mm_newkeys_from_blob cipher_by_name(enc->name) != enc->cipher, %s, cheating to make them equal", enc->name);
-        enc->cipher = cipher_by_name(enc->name);
-    }
 
 	if (enc->name == NULL || cipher_by_name(enc->name) != enc->cipher)
 		fatal("%s: bad cipher name %s or pointer %p", __func__,
@@ -501,7 +500,8 @@ mm_newkeys_to_blob(int mode, u_char **blobp, u_int *lenp)
 	/* Enc structure */
 	buffer_put_cstring(&b, enc->name);
 	/* The cipher struct is constant and shared, you export pointer */
-	buffer_append(&b, &enc->cipher, sizeof(enc->cipher));
+	//We disable this because we don't have a shared context in verificaiton.
+	//buffer_append(&b, &enc->cipher, sizeof(enc->cipher));
 	buffer_put_int(&b, enc->enabled);
 	buffer_put_int(&b, enc->block_size);
 	buffer_put_string(&b, enc->key, enc->key_len);

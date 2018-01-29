@@ -92,6 +92,7 @@ static volatile sig_atomic_t child_terminated = 0;	/* The child has terminated. 
 int ktest_signal_handler(int to){
   child_terminated = 1;
   debug("ktest_signal_handler child_terminated %d", child_terminated);
+  return 0;
 }
 
 /* prototypes */
@@ -111,8 +112,13 @@ notify_setup(void)
 	if (pipe(notify_pipe) < 0) {
 #endif
 		error("pipe(notify_pipe) failed %s", strerror(errno));
+#ifdef CLIVER
+	} else if ((ktest_fcntl(notify_pipe[0], F_SETFD, 1) == -1) ||
+	    (ktest_fcntl(notify_pipe[1], F_SETFD, 1) == -1)) {
+#else
 	} else if ((fcntl(notify_pipe[0], F_SETFD, 1) == -1) ||
 	    (fcntl(notify_pipe[1], F_SETFD, 1) == -1)) {
+#endif
 		error("fcntl(notify_pipe, F_SETFD) failed %s", strerror(errno));
 		close(notify_pipe[0]);
 		close(notify_pipe[1]);
@@ -754,7 +760,7 @@ collect_children(void)
 	sigprocmask(SIG_BLOCK, &nset, &oset);
 	if (child_terminated) {
 #ifdef CLIVER
-		while ((pid = ktest_waitpid(-1, &status, WNOHANG)) > 0)
+		while ((pid = ktest_waitpid_or_error(-1, &status, WNOHANG)) > 0)
 #else
 		while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
 #endif

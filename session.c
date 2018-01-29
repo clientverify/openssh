@@ -152,7 +152,11 @@ do_authenticated(Authctxt *authctxt)
 	 */
 	alarm(0);
 	if (startup_pipe != -1) {
+#ifdef CLIVER
+		ktest_close(startup_pipe);
+#else
 		close(startup_pipe);
+#endif
 		startup_pipe = -1;
 	}
 #if defined(HAVE_LOGIN_CAP) && defined(HAVE_PW_CLASS_IN_PASSWD)
@@ -589,19 +593,31 @@ do_exec_pty(Session *s, const char *command)
 	s->pid = pid;
 
 	/* Parent.  Close the slave side of the pseudo tty. */
+#ifdef CLIVER
+	ktest_close(ttyfd);
+#else
 	close(ttyfd);
+#endif
 
 	/*
 	 * Create another descriptor of the pty master side for use as the
 	 * standard input.  We could use the original descriptor, but this
 	 * simplifies code in server_loop.  The descriptor is bidirectional.
 	 */
+#ifdef CLIVER
+	fdout = ktest_dup(ptyfd);
+#else
 	fdout = dup(ptyfd);
+#endif
 	if (fdout < 0)
 		packet_disconnect("dup #1 failed: %.100s", strerror(errno));
 
 	/* we keep a reference to the pty master */
+#ifdef CLIVER
+	ptymaster = ktest_dup(ptyfd);
+#else
 	ptymaster = dup(ptyfd);
+#endif
 	if (ptymaster < 0)
 		packet_disconnect("dup #2 failed: %.100s", strerror(errno));
 	s->ptymaster = ptymaster;
@@ -1237,10 +1253,19 @@ do_child(Session *s, const char *command)
 	 * get_remote_ipaddr there.
 	 */
 	if (packet_get_connection_in() == packet_get_connection_out())
+#ifdef CLIVER
+		ktest_close(packet_get_connection_in());
+#else
 		close(packet_get_connection_in());
+#endif
 	else {
+#ifdef CLIVER
+		ktest_close(packet_get_connection_in());
+		ktest_close(packet_get_connection_out());
+#else
 		close(packet_get_connection_in());
 		close(packet_get_connection_out());
+#endif
 	}
 	/*
 	 * Close all descriptors related to channels.  They will still remain
@@ -1262,7 +1287,11 @@ do_child(Session *s, const char *command)
 	 * descriptors open.
 	 */
 	for (i = 3; i < 64; i++)
+#ifdef CLIVER
+		ktest_close(i);
+#else
 		close(i);
+#endif
 
 	/*
 	 * Must take new environment into use so that .ssh/rc,
@@ -1707,7 +1736,11 @@ session_pty_cleanup(void *session)
 	 * the pty cleanup, so that another process doesn't get this pty
 	 * while we're still cleaning up.
 	 */
+#ifdef CLIVER
+	if (ktest_close(s->ptymaster) < 0)
+#else
 	if (close(s->ptymaster) < 0)
+#endif
 		error("close(s->ptymaster): %s", strerror(errno));
 
 	/* unlink pty from session */

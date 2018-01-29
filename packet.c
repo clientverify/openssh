@@ -193,11 +193,19 @@ void
 packet_set_nonblocking(void)
 {
 	/* Set the socket into non-blocking mode. */
+#ifdef CLIVER
+    if (ktest_fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
+#else
     if (fcntl(connection_in, F_SETFL, O_NONBLOCK) < 0)
+#endif
 		error("fcntl O_NONBLOCK: %.100s", strerror(errno));
 
 	if (connection_out != connection_in) {
+#ifdef CLIVER
+        if (ktest_fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
+#else
         if (fcntl(connection_out, F_SETFL, O_NONBLOCK) < 0)
+#endif
 			error("fcntl O_NONBLOCK: %.100s", strerror(errno));
 	}
 }
@@ -227,11 +235,21 @@ packet_close(void)
 		return;
 	initialized = 0;
 	if (connection_in == connection_out) {
+#ifdef CLIVER
+		ktest_shutdown(connection_out, SHUT_RDWR);
+		ktest_close(connection_out);
+#else
 		shutdown(connection_out, SHUT_RDWR);
 		close(connection_out);
+#endif
 	} else {
+#ifdef CLIVER
+		ktest_close(connection_in);
+		ktest_close(connection_out);
+#else
 		close(connection_in);
 		close(connection_out);
+#endif
 	}
 	buffer_free(&input);
 	buffer_free(&output);

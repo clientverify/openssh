@@ -208,7 +208,11 @@ close_listen_socks(void)
 {
 	int i;
 	for (i = 0; i < num_listen_socks; i++)
+#ifdef CLIVER
+		ktest_close(listen_socks[i]);
+#else
 		close(listen_socks[i]);
+#endif
 	num_listen_socks = -1;
 }
 
@@ -219,7 +223,11 @@ close_startup_pipes(void)
 	if (startup_pipes)
 		for (i = 0; i < options.max_startups; i++)
 			if (startup_pipes[i] != -1)
+#ifdef CLIVER
+				ktest_close(startup_pipes[i]);
+#else
 				close(startup_pipes[i]);
+#endif
 }
 
 /*
@@ -405,9 +413,16 @@ sshd_exchange_identification(int sock_in, int sock_out)
 	if (sscanf(client_version_string, "SSH-%d.%d-%[^\n]\n",
 	    &remote_major, &remote_minor, remote_version) != 3) {
 		s = "Protocol mismatch.\n";
+#ifdef CLIVER
+		(void) atomicio(ktest_writesocket, sock_out, s, strlen(s));
+		ktest_close(sock_in);
+		ktest_close(sock_out);
+#else
 		(void) atomicio(write, sock_out, s, strlen(s));
 		close(sock_in);
 		close(sock_out);
+#endif
+
 		log("Bad protocol version identification '%.100s' from %s",
 		    client_version_string, get_remote_ipaddr());
 		fatal_cleanup();
@@ -460,9 +475,15 @@ sshd_exchange_identification(int sock_in, int sock_out)
 
 	if (mismatch) {
 		s = "Protocol major versions differ.\n";
+#ifdef CLIVER
+		(void) atomicio(ktest_writesocket, sock_out, s, strlen(s));
+		ktest_close(sock_in);
+		ktest_close(sock_out);
+#else
 		(void) atomicio(write, sock_out, s, strlen(s));
 		close(sock_in);
 		close(sock_out);
+#endif
 		log("Protocol major versions differ for %s: %.200s vs. %.200s",
 		    get_remote_ipaddr(),
 		    server_version_string, client_version_string);
@@ -596,6 +617,7 @@ usage(void)
 int
 main(int ac, char **av)
 {
+  ktest_register_signal_handler(&ktest_signal_handler);
 	extern char *optarg;
 	extern int optind;
 	int opt, sock_in = 0, sock_out = 0, newsock, j, i, fdsetsz, on = 1;
@@ -615,7 +637,7 @@ main(int ac, char **av)
 	Key *key;
 	int ret, key_used = 0;
 
-	__progname = get_progname(av[0]);
+	__progname = "fake_progname"; //get_progname(av[0]);
 
 	init_rng();
 
@@ -642,11 +664,10 @@ main(int ac, char **av)
  		    ktest_start(arg_ktest_filename, arg_ktest_mode);
  		    fprintf(stdout, "Recording to: %s\n", arg_ktest_filename);
             break;
-        case 'a':
-            arg_ktest_mode = KTEST_PLAYBACK;
+    case 'a':
+        arg_ktest_mode = KTEST_PLAYBACK;
  		    arg_ktest_filename = optarg;
  		    ktest_start(arg_ktest_filename, arg_ktest_mode);
-            ktest_register_signal_handler(&ktest_signal_handler);
  		    fprintf(stdout, "Playing back from: %s\n", arg_ktest_filename);
             break;
 #endif
@@ -869,7 +890,11 @@ main(int ac, char **av)
 		fd = open(_PATH_TTY, O_RDWR | O_NOCTTY);
 		if (fd >= 0) {
 			(void) ioctl(fd, TIOCNOTTY, NULL);
+#ifdef CLIVER
+			ktest_close(fd);
+#else
 			close(fd);
+#endif
 		}
 #endif /* TIOCNOTTY */
 	}
@@ -916,15 +941,27 @@ main(int ac, char **av)
 				continue;
 			}
 			/* Create socket for listening. */
+#ifdef CLIVER
+			listen_sock = ktest_socket(ai->ai_family, SOCK_STREAM, 0);
+#else
 			listen_sock = socket(ai->ai_family, SOCK_STREAM, 0);
+#endif
 			if (listen_sock < 0) {
 				/* kernel may not support ipv6 */
 				verbose("socket: %.100s", strerror(errno));
 				continue;
 			}
+#ifdef CLIVER
+            if (ktest_fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#else
             if (fcntl(listen_sock, F_SETFL, O_NONBLOCK) < 0) {
+#endif
 				error("listen_sock O_NONBLOCK: %s", strerror(errno));
+#ifdef CLIVER
+				ktest_close(listen_sock);
+#else
 				close(listen_sock);
+#endif
 				continue;
 			}
 			/*
@@ -951,7 +988,11 @@ main(int ac, char **av)
 				if (!ai->ai_next)
 				    error("Bind to port %s on %s failed: %.200s.",
 					    strport, ntop, strerror(errno));
+#ifdef CLIVER
+				ktest_close(listen_sock);
+#else
 				close(listen_sock);
+#endif
 				continue;
 			}
 			listen_socks[num_listen_socks] = listen_sock;
@@ -959,15 +1000,19 @@ main(int ac, char **av)
 
 			/* Start listening on the port. */
 			log("Server listening on %s port %s.", ntop, strport);
+#ifdef CLIVER
+			if (ktest_listen(listen_sock, 5) < 0)
+#else
 			if (listen(listen_sock, 5) < 0)
+#endif
 				fatal("listen: %.100s", strerror(errno));
 
 		}
-//#ifdef CLIVER
-//        ktest_freeaddrinfo(options.listen_addrs);
-//#else
+#ifdef CLIVER
+		ktest_freeaddrinfo(options.listen_addrs);
+#else
 		freeaddrinfo(options.listen_addrs);
-//#endif
+#endif
 
 		if (!num_listen_socks)
 			fatal("Cannot bind any address.");
@@ -1068,7 +1113,11 @@ main(int ac, char **av)
 					 * after successful authentication
 					 * or if the child has died
 					 */
+#ifdef CLIVER
+					ktest_close(startup_pipes[i]);
+#else
 					close(startup_pipes[i]);
+#endif
 					startup_pipes[i] = -1;
 					startups--;
 				}
@@ -1088,22 +1137,35 @@ main(int ac, char **av)
 						error("accept: %.100s", strerror(errno));
 					continue;
 				}
+#ifdef CLIVER
+                if (ktest_fcntl(newsock, F_SETFL, 0) < 0) {
+#else
                 if (fcntl(newsock, F_SETFL, 0) < 0) {
+#endif
 					error("newsock del O_NONBLOCK: %s", strerror(errno));
+#ifdef CLIVER
+					ktest_close(newsock);
+#else
 					close(newsock);
+#endif
 					continue;
 				}
 				if (drop_connection(startups) == 1) {
 					debug("drop connection #%d", startups);
+#ifdef CLIVER
+					ktest_close(newsock);
+#else
 					close(newsock);
+#endif
 					continue;
 				}
 #ifdef CLIVER
 				if (ktest_pipe(startup_p) == -1) {
+					ktest_close(newsock);
 #else
 				if (pipe(startup_p) == -1) {
-#endif
 					close(newsock);
+#endif
 					continue;
 				}
 
@@ -1144,7 +1206,11 @@ main(int ac, char **av)
 					 * the child process the connection. The
 					 * parent continues listening.
 					 */
+#ifdef CLIVER
+					if ((pid = ktest_fork(CHILD)) == 0) {
+#else
 					if ((pid = fork()) == 0) {
+#endif
 						/*
 						 * Child.  Close the listening and max_startup
 						 * sockets.  Start using the accepted socket.
@@ -1182,7 +1248,11 @@ main(int ac, char **av)
 				arc4random_stir();
 
 				/* Close the new socket (the child is now taking care of it). */
+#ifdef CLIVER
+				ktest_close(newsock);
+#else
 				close(newsock);
+#endif
 			}
 			/* child process check (or debug mode) */
 			if (num_listen_socks < 0)
@@ -1312,6 +1382,7 @@ main(int ac, char **av)
 
 	packet_close();
 #ifdef CLIVER
+   debug("calling ktest_finish");
    ktest_finish();
 #endif
 	exit(0);

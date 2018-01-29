@@ -77,12 +77,20 @@ ssh_get_authentication_socket(void)
 	sunaddr.sun_family = AF_UNIX;
 	strlcpy(sunaddr.sun_path, authsocket, sizeof(sunaddr.sun_path));
 
+#ifdef CLIVER
+	sock = ktest_socket(AF_UNIX, SOCK_STREAM, 0);
+#else
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+#endif
 	if (sock < 0)
 		return -1;
 
 	/* close on exec */
+#ifdef CLIVER
+	if (ktest_fcntl(sock, F_SETFD, 1) == -1) {
+#else
 	if (fcntl(sock, F_SETFD, 1) == -1) {
+#endif
 		close(sock);
 		return -1;
 	}

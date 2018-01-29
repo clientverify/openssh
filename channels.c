@@ -1233,7 +1233,7 @@ channel_handle_rfd(Channel *c, fd_set * readset, fd_set * writeset)
 	if (c->rfd != -1 &&
 	    FD_ISSET(c->rfd, readset)) {
 #ifdef CLIVER
-		len = ktest_readsocket(c->rfd, buf, sizeof(buf));
+		len = ktest_readsocket_or_error(c->rfd, buf, sizeof(buf));
         assert(len >= 0 || (errno != EINTR && errno != EAGAIN));
 #else
 		len = read(c->rfd, buf, sizeof(buf));
@@ -2279,7 +2279,11 @@ connect_to(const char *host, u_short port)
 			error("connect_to: getnameinfo failed");
 			continue;
 		}
+#ifdef CLIVER
+		sock = ktest_socket(ai->ai_family, SOCK_STREAM, 0);
+#else
 		sock = socket(ai->ai_family, SOCK_STREAM, 0);
+#endif
 		if (sock < 0) {
 			error("socket: %.100s", strerror(errno));
 			continue;
@@ -2457,7 +2461,11 @@ connect_local_xsocket(u_int dnr)
 	int sock;
 	struct sockaddr_un addr;
 
+#ifdef CLIVER
+	sock = ktest_socket(AF_UNIX, SOCK_STREAM, 0);
+#else
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+#endif
 	if (sock < 0)
 		error("socket: %.100s", strerror(errno));
 	memset(&addr, 0, sizeof(addr));

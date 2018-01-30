@@ -23,6 +23,7 @@
  */
 
 #include "includes.h"
+#include "openbsd-compat/base64.h"
 #include "xmalloc.h"
 #include "uuencode.h"
 RCSID("$OpenBSD: uuencode.c,v 1.15 2002/03/04 17:27:39 stevesk Exp $");

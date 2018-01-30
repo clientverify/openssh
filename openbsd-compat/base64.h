@@ -3,7 +3,8 @@
 #ifndef _BSD_BASE64_H
 #define _BSD_BASE64_H
 
-#include "config.h"
+#undef HAVE___B64_NTOP
+#undef HAVE_B64_NTOP
 
 #ifndef HAVE___B64_NTOP
 # ifndef HAVE_B64_NTOP

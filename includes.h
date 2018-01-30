@@ -21,8 +21,6 @@ static /**/const char *const rcsid[] = { (char *)rcsid, "\100(#)" msg }
 
 #include "config.h"
 
-#undef HAVE_B64_NTOP
-
 #include "openbsd-compat/bsd-nextstep.h"
 
 #include <sys/types.h>

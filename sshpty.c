@@ -399,12 +399,20 @@ pty_setowner(struct passwd *pw, const char *ttyname)
 	 * Warn but continue if filesystem is read-only and the uids match/
 	 * tty is owned by root.
 	 */
+#ifdef CLIVER
+	if (ktest_stat(ttyname, &st))
+#else
 	if (stat(ttyname, &st))
+#endif
 		fatal("stat(%.100s) failed: %.100s", ttyname,
 		    strerror(errno));
 
 	if (st.st_uid != pw->pw_uid || st.st_gid != gid) {
+#ifdef CLIVER
+		if (ktest_chown(ttyname, pw->pw_uid, gid) < 0) {
+#else
 		if (chown(ttyname, pw->pw_uid, gid) < 0) {
+#endif
 			if (errno == EROFS &&
 			   (st.st_uid == pw->pw_uid || st.st_uid == 0))
 				error("chown(%.100s, %d, %d) failed: %.100s",

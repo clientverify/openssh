@@ -73,7 +73,11 @@ temporarily_use_uid(struct passwd *pw)
 
 	/* set and save the user's groups */
 	if (user_groupslen == -1) {
+#ifdef CLIVER
+		if (ktest_initgroups(pw->pw_name, pw->pw_gid) < 0)
+#else
 		if (initgroups(pw->pw_name, pw->pw_gid) < 0)
+#endif
 			fatal("initgroups: %s: %.100s", pw->pw_name,
 			    strerror(errno));
 		user_groupslen = getgroups(NGROUPS_MAX, user_groups);
@@ -82,7 +86,11 @@ temporarily_use_uid(struct passwd *pw)
 	}
 #ifndef HAVE_CYGWIN
 	/* Set the effective uid to the given (unprivileged) uid. */
+#ifdef CLIVER
+	if (ktest_setgroups(user_groupslen, user_groups) < 0)
+#else
 	if (setgroups(user_groupslen, user_groups) < 0)
+#endif
 		fatal("setgroups: %.100s", strerror(errno));
 #endif /* !HAVE_CYWIN */
 #ifndef SAVED_IDS_WORK_WITH_SETEUID
@@ -131,8 +139,14 @@ restore_uid(void)
 	setgid(getgid());
 #endif /* SAVED_IDS_WORK_WITH_SETEUID */
 
+
+
 #ifndef HAVE_CYGWIN
+#ifdef CLIVER
+	if (ktest_setgroups(saved_egroupslen, saved_egroups) < 0)
+#else
 	if (setgroups(saved_egroupslen, saved_egroups) < 0)
+#endif
 		fatal("setgroups: %.100s", strerror(errno));
 #endif /* !HAVE_CYGWIN */
 	temporarily_use_uid_effective = 0;

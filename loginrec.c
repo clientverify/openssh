@@ -173,6 +173,7 @@ RCSID("$Id: loginrec.c,v 1.39 2002/02/25 01:56:47 tim Exp $");
 #   include <libutil.h>
 #endif
 
+#undef HAVE_LOGOUT
 /**
  ** prototypes for helper functions in this file
  **/

@@ -637,7 +637,7 @@ main(int ac, char **av)
 	Key *key;
 	int ret, key_used = 0;
 
-	__progname = "fake_progname"; //get_progname(av[0]);
+	__progname = "sshd";
 
 	init_rng();
 

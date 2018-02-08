@@ -74,6 +74,7 @@ RCSID("$OpenBSD: sshd.c,v 1.228 2002/02/27 21:23:13 stevesk Exp $");
 #include "channels.h"
 #include "serverloop.h"
 
+int my_verification_sock;
 #ifdef LIBWRAP
 #include <tcpd.h>
 #include <syslog.h>
@@ -859,6 +860,8 @@ main(int ac, char **av)
 			    options.server_key_bits);
 		}
 	}
+  //set verification socket
+  my_verification_sock = ktest_verification_socket(AF_INET, SOCK_STREAM, 0);
 
 	/* Configuration looks good, so exit if in test mode. */
 	if (test_flag)

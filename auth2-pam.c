@@ -12,6 +12,7 @@ RCSID("$Id: auth2-pam.c,v 1.12 2002/01/22 12:43:13 djm Exp $");
 #include "xmalloc.h"
 #include "dispatch.h"
 #include "log.h"
+#include "assert.h"
 
 static int do_pam_conversation_kbd_int(int num_msg, 
     const struct pam_message **msg, struct pam_response **resp, 
@@ -24,10 +25,12 @@ struct {
 	struct pam_response *responses;
 } context_pam2 = {0, 0, 0, NULL};
 
+#ifndef CLIVER
 static struct pam_conv conv2 = {
 	do_pam_conversation_kbd_int,
 	NULL,
 };
+#endif
 
 int
 auth2_pam(Authctxt *authctxt)
@@ -37,8 +40,11 @@ auth2_pam(Authctxt *authctxt)
 	if (authctxt->user == NULL)
 		fatal("auth2_pam: internal error: no user");
 
+#ifndef CLIVER
 	conv2.appdata_ptr = authctxt;
 	do_pam_set_conv(&conv2);
+#endif
+  assert(0);
 
 	dispatch_set(SSH2_MSG_USERAUTH_INFO_RESPONSE,
 	    &input_userauth_info_response_pam);

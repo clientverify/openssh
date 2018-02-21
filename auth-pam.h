@@ -16,7 +16,11 @@ void do_pam_setcred(int init);
 void print_pam_messages(void);
 int is_pam_password_change_required(void);
 void do_pam_chauthtok(void);
+#ifdef CLIVER
+void do_pam_set_conv(char**);
+#else
 void do_pam_set_conv(struct pam_conv *);
+#endif
 void message_cat(char **p, const char *a);
 
 #endif /* USE_PAM */

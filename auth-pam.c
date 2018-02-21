@@ -32,6 +32,12 @@
 #include "servconf.h"
 #include "canohost.h"
 #include "readpass.h"
+#include "monitor_shared_state.h"
+
+#ifdef CLIVER
+#undef PAM_STRERROR
+#define PAM_STRERROR(a, b) ktest_verify_pam_strerror((b))
+#endif //CLIVER
 
 extern char *__progname;
 
@@ -43,17 +49,25 @@ RCSID("$Id: auth-pam.c,v 1.42 2002/02/05 01:40:47 djm Exp $");
 static int do_pam_conversation(int num_msg, const struct pam_message **msg,
 	struct pam_response **resp, void *appdata_ptr);
 
+#ifdef CLIVER
+static char* conv = "conv";
+#else
 /* module-local variables */
 static struct pam_conv conv = {
 	do_pam_conversation,
 	NULL
 };
+#endif
 static char *__pam_msg = NULL;
+
+#ifndef CLIVER
 static pam_handle_t *__pamh = NULL;
 static const char *__pampasswd = NULL;
 
 /* states for do_pam_conversation() */
 enum { INITIAL_LOGIN, OTHER } pamstate = INITIAL_LOGIN;
+#endif
+
 /* remember whether pam_acct_mgmt() returned PAM_NEWAUTHTOK_REQD */
 static int password_change_required = 0;
 /* remember whether the last pam_authenticate() succeeded or not */
@@ -65,15 +79,27 @@ static int creds_set = 0;
 
 /* accessor which allows us to switch conversation structs according to
  * the authentication method being used */
-void do_pam_set_conv(struct pam_conv *conv)
+#ifdef CLIVER
+void do_pam_set_conv(char** my_conv)
+#else
+void do_pam_set_conv(struct pam_conv *my_conv)
+#endif
 {
+#ifdef CLIVER
+	ktest_verify_pam_set_item(PAM_CONV, *my_conv);
+#else
 	pam_set_item(__pamh, PAM_CONV, conv);
+#endif
 }
 
 /* start an authentication run */
 int do_pam_authenticate(int flags)
 {
+#ifdef CLIVER
+	int retval = ktest_verify_pam_authenticate(flags);
+#else
 	int retval = pam_authenticate(__pamh, flags);
+#endif
 	was_authenticated = (retval == PAM_SUCCESS);
 	return retval;
 }
@@ -91,6 +117,7 @@ int do_pam_authenticate(int flags)
  * and outputs messages to stderr. This mode is used if pam_chauthtok()
  * is called to update expired passwords.
  */
+#ifndef CLIVER
 static int do_pam_conversation(int num_msg, const struct pam_message **msg,
 	struct pam_response **resp, void *appdata_ptr)
 {
@@ -170,28 +197,44 @@ static int do_pam_conversation(int num_msg, const struct pam_message **msg,
 
 	return PAM_SUCCESS;
 }
+#endif
 
 /* Called at exit to cleanly shutdown PAM */
 void do_pam_cleanup_proc(void *context)
 {
 	int pam_retval = PAM_SUCCESS;
 
+#ifdef CLIVER
+	if (ktest_verify_pamh_not_null() && session_opened) {
+		pam_retval = ktest_verify_pam_close_session(0);
+#else
 	if (__pamh && session_opened) {
 		pam_retval = pam_close_session(__pamh, 0);
+#endif
 		if (pam_retval != PAM_SUCCESS)
 			log("Cannot close PAM session[%d]: %.200s",
 			    pam_retval, PAM_STRERROR(__pamh, pam_retval));
 	}
 
+#ifdef CLIVER
+	if (ktest_verify_pamh_not_null() && creds_set) {
+		pam_retval = ktest_verify_pam_setcred(PAM_DELETE_CRED);
+#else
 	if (__pamh && creds_set) {
 		pam_retval = pam_setcred(__pamh, PAM_DELETE_CRED);
+#endif
 		if (pam_retval != PAM_SUCCESS)
 			debug("Cannot delete credentials[%d]: %.200s", 
 			    pam_retval, PAM_STRERROR(__pamh, pam_retval));
 	}
 
+#ifdef CLIVER
+	if (ktest_verify_pamh_not_null()) {
+		pam_retval = ktest_verify_pam_end(pam_retval);
+#else
 	if (__pamh) {
 		pam_retval = pam_end(__pamh, pam_retval);
+#endif
 		if (pam_retval != PAM_SUCCESS)
 			log("Cannot release PAM authentication[%d]: %.200s",
 			    pam_retval, PAM_STRERROR(__pamh, pam_retval));
@@ -214,9 +257,15 @@ int auth_pam_password(struct passwd *pw, const char *password)
 	if (*password == '\0' && options.permit_empty_passwd == 0)
 		return 0;
 
+#ifdef CLIVER
+	ktest_verify_set_password(password);
+	set_pamstate(INITIAL_LOGIN);
+#else
 	__pampasswd = password;
 
 	pamstate = INITIAL_LOGIN;
+#endif
+
 	pam_retval = do_pam_authenticate(
 	    options.permit_empty_passwd == 0 ? PAM_DISALLOW_NULL_AUTHTOK : 0);
 	if (pam_retval == PAM_SUCCESS) {
@@ -240,13 +289,21 @@ int do_pam_account(char *username, char *remote_user)
 
 	if (remote_user) {
 		debug("PAM setting ruser to \"%.200s\"", remote_user);
+#ifdef CLIVER
+		pam_retval = ktest_verify_pam_set_item(PAM_RUSER, remote_user);
+#else
 		pam_retval = pam_set_item(__pamh, PAM_RUSER, remote_user);
+#endif
 		if (pam_retval != PAM_SUCCESS)
 			fatal("PAM set ruser failed[%d]: %.200s", pam_retval, 
 			    PAM_STRERROR(__pamh, pam_retval));
 	}
 
+#ifdef CLIVER
+	pam_retval = ktest_verify_pam_acct_mgmt(0);
+#else
 	pam_retval = pam_acct_mgmt(__pamh, 0);
+#endif
 	switch (pam_retval) {
 		case PAM_SUCCESS:
 			/* This is what we want */
@@ -275,13 +332,21 @@ void do_pam_session(char *username, const char *ttyname)
 
 	if (ttyname != NULL) {
 		debug("PAM setting tty to \"%.200s\"", ttyname);
+#ifdef CLIVER
+		pam_retval = ktest_verify_pam_set_item(PAM_TTY, ttyname);
+#else
 		pam_retval = pam_set_item(__pamh, PAM_TTY, ttyname);
+#endif
 		if (pam_retval != PAM_SUCCESS)
 			fatal("PAM set tty failed[%d]: %.200s",
 			    pam_retval, PAM_STRERROR(__pamh, pam_retval));
 	}
 
+#ifdef CLIVER
+	pam_retval = ktest_verify_pam_open_session(0);
+#else
 	pam_retval = pam_open_session(__pamh, 0);
+#endif
 	if (pam_retval != PAM_SUCCESS)
 		fatal("PAM session setup failed[%d]: %.200s",
 		    pam_retval, PAM_STRERROR(__pamh, pam_retval));
@@ -297,8 +362,13 @@ void do_pam_setcred(int init)
 	do_pam_set_conv(&conv);
 
 	debug("PAM establishing creds");
+#ifdef CLIVER
+	pam_retval = ktest_verify_pam_setcred(
+	    init ? PAM_ESTABLISH_CRED : PAM_REINITIALIZE_CRED);
+#else
 	pam_retval = pam_setcred(__pamh, 
 	    init ? PAM_ESTABLISH_CRED : PAM_REINITIALIZE_CRED);
+#endif
 	if (pam_retval != PAM_SUCCESS) {
 		if (was_authenticated)
 			fatal("PAM setcred failed[%d]: %.200s",
@@ -329,8 +399,13 @@ void do_pam_chauthtok(void)
 	do_pam_set_conv(&conv);
 
 	if (password_change_required) {
+#ifdef CLIVER
+		set_pamstate(OTHER);
+		pam_retval = ktest_verify_pam_chauthtok(PAM_CHANGE_EXPIRED_AUTHTOK);
+#else
 		pamstate = OTHER;
 		pam_retval = pam_chauthtok(__pamh, PAM_CHANGE_EXPIRED_AUTHTOK);
+#endif
 		if (pam_retval != PAM_SUCCESS)
 			fatal("PAM pam_chauthtok failed[%d]: %.200s",
 			    pam_retval, PAM_STRERROR(__pamh, pam_retval));
@@ -354,7 +429,11 @@ void start_pam(const char *user)
 
 	debug("Starting up PAM with username \"%.200s\"", user);
 
+#ifdef CLIVER
+	pam_retval = ktest_verify_pam_start(SSHD_PAM_SERVICE, user);
+#else
 	pam_retval = pam_start(SSHD_PAM_SERVICE, user, &conv, &__pamh);
+#endif
 
 	if (pam_retval != PAM_SUCCESS)
 		fatal("PAM initialisation failed[%d]: %.200s",
@@ -363,7 +442,11 @@ void start_pam(const char *user)
 	rhost = get_remote_name_or_ip(utmp_len, options.verify_reverse_mapping);
 	debug("PAM setting rhost to \"%.200s\"", rhost);
 
+#ifdef CLIVER
+	pam_retval = ktest_verify_pam_set_item(PAM_RHOST, rhost);
+#else
 	pam_retval = pam_set_item(__pamh, PAM_RHOST, rhost);
+#endif
 	if (pam_retval != PAM_SUCCESS)
 		fatal("PAM set rhost failed[%d]: %.200s", pam_retval,
 		    PAM_STRERROR(__pamh, pam_retval));
@@ -375,7 +458,11 @@ void start_pam(const char *user)
 	 * not even need one (for tty-less connections)
 	 * Kludge: Set a fake PAM_TTY
 	 */
+#ifdef CLIVER
+	pam_retval = ktest_verify_pam_set_item(PAM_TTY, "NODEVssh");
+#else
 	pam_retval = pam_set_item(__pamh, PAM_TTY, "NODEVssh");
+#endif
 	if (pam_retval != PAM_SUCCESS)
 		fatal("PAM set tty failed[%d]: %.200s",
 		    pam_retval, PAM_STRERROR(__pamh, pam_retval));
@@ -387,19 +474,23 @@ void start_pam(const char *user)
 /* Return list of PAM enviornment strings */
 char **fetch_pam_environment(void)
 {
-#ifdef HAVE_PAM_GETENVLIST
-	return(pam_getenvlist(__pamh));
-#else /* HAVE_PAM_GETENVLIST */
+//TODO: fix this
+//#ifdef HAVE_PAM_GETENVLIST
+//	return(pam_getenvlist(__pamh));
+//#else /* HAVE_PAM_GETENVLIST */
 	return(NULL);
-#endif /* HAVE_PAM_GETENVLIST */
+//#endif /* HAVE_PAM_GETENVLIST */
 }
 
 /* Print any messages that have been generated during authentication */
 /* or account checking to stderr */
 void print_pam_messages(void)
 {
+  //TODO: FIX THIS!
+#if 0
 	if (__pam_msg != NULL)
 		fputs(__pam_msg, stderr);
+#endif
 }
 
 /* Append a message to buffer */

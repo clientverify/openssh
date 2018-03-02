@@ -24,8 +24,22 @@ void ktest_verify_set_password(char* password){
 
 //TODO: go back and make this record and playback
 int ktest_verify_pamh_not_null(void){
-  if(pamh == NULL) return 0; 
-  return 1;
+  printf("ktest_verify_pam_acct_mgmt entered\n");
+  if(arg_ktest_mode == KTEST_NONE){
+    if(pamh == NULL) return 0;
+    return 1;
+  } else if (arg_ktest_mode == KTEST_RECORD){
+    int ret = -1;
+    if(pamh == NULL) ret = 0;
+    else ret = 1;
+    printf("ktest_verify_pamh_not_null calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
+    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    return ret;
+  } else if (arg_ktest_mode == KTEST_PLAYBACK){
+    int ret = -1;
+    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    return ret;
+  } else assert(0);
 }
 
 /*

@@ -39,6 +39,10 @@ RCSID("$OpenBSD: kexgex.c,v 1.20 2002/02/28 15:46:33 markus Exp $");
 #include "ssh2.h"
 #include "compat.h"
 
+#ifdef CLIVER
+#include "monitor_dh.h"
+#endif
+
 static u_char *
 kexgex_hash(
     char *client_version_string,
@@ -296,7 +300,11 @@ kexgex_server(Kex *kex)
 		fatal("DH_GEX_REQUEST, bad parameters: %d !< %d !< %d",
 		    min, nbits, max);
 
+#ifdef CLIVER
+	dh = ktest_verify_choose_dh(min, nbits, max);
+#else
 	dh = choose_dh(min, nbits, max);
+#endif
 	if (dh == NULL)
 		packet_disconnect("Protocol error: no matching DH grp found");
 

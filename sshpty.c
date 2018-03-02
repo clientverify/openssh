@@ -65,7 +65,11 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 		error("openpty: %.100s", strerror(errno));
 		return 0;
 	}
+#ifdef CLIVER
+	name = ktest_ttyname(*ttyfd);
+#else
 	name = ttyname(*ttyfd);
+#endif
 	if (!name)
 		fatal("openpty returns device for which ttyname fails.");
 
@@ -156,7 +160,11 @@ pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, int namebuflen)
 		error("Could not open /dev/ptc: %.100s", strerror(errno));
 		return 0;
 	}
+#ifdef CLIVER
+	name = ktest_ttyname(*ptyfd);
+#else
 	name = ttyname(*ptyfd);
+#endif
 	if (!name)
 		fatal("Open of /dev/ptc returns device for which ttyname fails.");
 	strlcpy(namebuf, name, namebuflen);

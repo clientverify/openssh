@@ -20,7 +20,7 @@ void do_pam_chauthtok(void);
 void do_pam_set_conv(char**);
 #else
 void do_pam_set_conv(struct pam_conv *);
-#endif
 void message_cat(char **p, const char *a);
+#endif
 
 #endif /* USE_PAM */

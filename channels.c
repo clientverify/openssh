@@ -57,6 +57,10 @@ RCSID("$OpenBSD: channels.c,v 1.171 2002/03/04 19:37:58 markus Exp $");
 #include "authfd.h"
 #include "pathnames.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 
 /* -- channel core */
 
@@ -2693,7 +2697,11 @@ x11_request_forwarding_with_spoofing(int client_session_id,
 		if (sscanf(data + 2 * i, "%2x", &value) != 1)
 			fatal("x11_request_forwarding: bad authentication data: %.100s", data);
 		if (i % 4 == 0)
+#ifdef CLIVER
+			rand = ktest_arc4random();
+#else
 			rand = arc4random();
+#endif
 		x11_saved_data[i] = value;
 		x11_fake_data[i] = rand & 0xff;
 		rand >>= 8;

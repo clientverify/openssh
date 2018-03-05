@@ -36,7 +36,7 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
     ktest_writesocket(verification_socket, (char*)&max, sizeof(max));
 
     //dealing with the fact that the call this models has a single call to
-    arc4random();
+    ktest_arc4random();
 
     unsigned char *from = malloc(MAX_LEN);
 

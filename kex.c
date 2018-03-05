@@ -41,6 +41,10 @@ RCSID("$OpenBSD: kex.c,v 1.47 2002/02/28 15:46:33 markus Exp $");
 #include "match.h"
 #include "dispatch.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 #define KEX_COOKIE_LEN	16
 
 /* prototype */
@@ -57,7 +61,11 @@ kex_prop2buf(Buffer *b, char *proposal[PROPOSAL_MAX])
 	buffer_clear(b);
 	for (i = 0; i < KEX_COOKIE_LEN; i++) {
 		if (i % 4 == 0)
+#ifdef CLIVER
+			rand = ktest_arc4random();
+#else
 			rand = arc4random();
+#endif
 		buffer_put_char(b, rand & 0xff);
 		rand >>= 8;
 	}

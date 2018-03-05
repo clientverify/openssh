@@ -52,6 +52,11 @@ RCSID("$OpenBSD: authfile.c,v 1.48 2002/02/28 15:46:33 markus Exp $");
 #include "authfile.h"
 #include "rsa.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
+
 /* Version identification string for SSH v1 identity files. */
 static const char authfile_id_string[] =
     "SSH PRIVATE KEY FILE FORMAT 1.1\n";
@@ -87,7 +92,11 @@ key_save_private_rsa1(Key *key, const char *filename, const char *passphrase,
 	buffer_init(&buffer);
 
 	/* Put checkbytes for checking passphrase validity. */
+#ifdef CLIVER
+	rand = ktest_arc4random();
+#else
 	rand = arc4random();
+#endif
 	buf[0] = rand & 0xff;
 	buf[1] = (rand >> 8) & 0xff;
 	buf[2] = buf[0];

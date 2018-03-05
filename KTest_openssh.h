@@ -9,3 +9,4 @@
 int ktest_pipe(int pipefd[2]);
 int ktest_open(const char *path, int oflag);
 int ktest_openpty(int *ptyfd, int *ttyfd, char *name, const struct termios *termp, const struct winsize *winp);
+unsigned int ktest_arc4random(void);

@@ -48,6 +48,10 @@ RCSID("$OpenBSD: sshconnect1.c,v 1.48 2002/02/11 16:15:46 markus Exp $");
 #include "canohost.h"
 #include "auth.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 /* Session id for the current session. */
 u_char session_id[16];
 u_int supported_authentications = 0;
@@ -986,7 +990,11 @@ ssh_kex(char *host, struct sockaddr *hostaddr)
 	 */
 	for (i = 0; i < 32; i++) {
 		if (i % 4 == 0)
+#ifdef CLIVER
+			rand = ktest_arc4random();
+#else
 			rand = arc4random();
+#endif
 		session_key[i] = rand & 0xff;
 		rand >>= 8;
 	}

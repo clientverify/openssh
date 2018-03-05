@@ -93,7 +93,7 @@ char *__progname;
 #endif
 
 #ifdef CLIVER
-#include <openssl/KTest.h>
+#include "KTest_openssh.h"
 #endif
 
 /* Server configuration options. */
@@ -325,7 +325,11 @@ generate_ephemeral_server_key(void)
 
 	for (i = 0; i < SSH_SESSION_KEY_LENGTH; i++) {
 		if (i % 4 == 0)
+#ifdef CLIVER
+			rand = ktest_arc4random();
+#else
 			rand = arc4random();
+#endif
 		sensitive_data.ssh1_cookie[i] = rand & 0xff;
 		rand >>= 8;
 	}
@@ -577,7 +581,11 @@ drop_connection(int startups)
 	p /= (double) (options.max_startups - options.max_startups_begin);
 	p += options.max_startups_rate;
 	p /= 100.0;
+#ifdef CLIVER
+	r = ktest_arc4random() / (double) UINT_MAX;
+#else
 	r = arc4random() / (double) UINT_MAX;
+#endif
 
 	debug("drop_connection: p %g, r %g", p, r);
 	return (r < p) ? 1 : 0;
@@ -1046,11 +1054,7 @@ main(int ac, char **av)
 			 */
 			f = fopen(options.pid_file, "wb");
 			if (f) {
-//#ifdef CLIVER
-//				fprintf(f, "%u\n", (u_int) ktest_getpid());
-//#else
                 fprintf(f, "%u\n", (u_int) getpid());
-//#endif
 				fclose(f);
 			}
 		}
@@ -1196,11 +1200,7 @@ main(int ac, char **av)
 					sock_in = newsock;
 					sock_out = newsock;
 					startup_pipe = -1;
-//#ifdef CLIVER
-//					pid = ktest_getpid();
-//#else
-                    pid = getpid();
-//#endif
+					pid = getpid();
 
 					break;
 				} else {
@@ -1416,7 +1416,11 @@ do_ssh1_kex(void)
 	 */
 	for (i = 0; i < 8; i++) {
 		if (i % 4 == 0)
+#ifdef CLIVER
+			rand = ktest_arc4random();
+#else
 			rand = arc4random();
+#endif
 		cookie[i] = rand & 0xff;
 		rand >>= 8;
 	}

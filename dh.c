@@ -39,6 +39,10 @@ RCSID("$OpenBSD: dh.c,v 1.21 2002/03/06 00:23:27 markus Exp $");
 #include "log.h"
 #include "misc.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 static int
 parse_prime(int linenum, char *line, struct dhgroup *dhg)
 {
@@ -145,7 +149,11 @@ choose_dh(int min, int wantbits, int max)
 	}
 
 	linenum = 0;
+#ifdef CLIVER
+	which = ktest_arc4random() % bestcount;
+#else
 	which = arc4random() % bestcount;
+#endif
 	while (fgets(line, sizeof(line), f)) {
 		if (!parse_prime(linenum, line, &dhg))
 			continue;

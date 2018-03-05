@@ -61,6 +61,10 @@ RCSID("$OpenBSD: packet.c,v 1.90 2002/02/27 21:23:13 stevesk Exp $");
 #include "canohost.h"
 #include "misc.h"
 
+#ifdef CLIVER
+#include "KTest_openssh.h"
+#endif
+
 #ifdef PACKET_DEBUG
 #define DBG(x) x
 #else
@@ -412,7 +416,11 @@ packet_send1(void)
 		cp = buffer_ptr(&outgoing_packet);
 		for (i = 0; i < padding; i++) {
 			if (i % 4 == 0)
+#ifdef CLIVER
+				rand = ktest_arc4random();
+#else
 				rand = arc4random();
+#endif
 			cp[7 - i] = rand & 0xff;
 			rand >>= 8;
 		}
@@ -577,7 +585,11 @@ packet_send2(void)
 		/* random padding */
 		for (i = 0; i < padlen; i++) {
 			if (i % 4 == 0)
+#ifdef CLIVER
+				rand = ktest_arc4random();
+#else
 				rand = arc4random();
+#endif
 			cp[i] = rand & 0xff;
 			rand >>= 8;
 		}
@@ -1326,7 +1338,11 @@ packet_send_ignore(int nbytes)
 	packet_put_int(nbytes);
 	for (i = 0; i < nbytes; i++) {
 		if (i % 4 == 0)
+#ifdef CLIVER
+			rand = ktest_arc4random();
+#else
 			rand = arc4random();
+#endif
 		packet_put_char(rand & 0xff);
 		rand >>= 8;
 	}

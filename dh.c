@@ -217,7 +217,11 @@ dh_gen_key(DH *dh, int need)
 		/* generate a 2*need bits random private exponent */
 		if (!BN_rand(dh->priv_key, 2*need, 0, 0))
 			fatal("dh_gen_key: BN_rand failed");
+#ifdef CLIVER
+		if (ktest_verify_DH_generate_key(dh) == 0)
+#else
 		if (DH_generate_key(dh) == 0)
+#endif
 			fatal("DH_generate_key");
 		for (i = 0; i <= BN_num_bits(dh->priv_key); i++)
 			if (BN_is_bit_set(dh->priv_key, i))

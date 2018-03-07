@@ -9,14 +9,14 @@
 #include "openbsd-compat/bsd-arc4random.h"
 unsigned int ktest_arc4random()
 {
-  if (arg_ktest_mode == KTEST_NONE) {
+  if (ktest_get_mode() == KTEST_NONE) {
     return arc4random();
-  } else if (arg_ktest_mode == KTEST_RECORD) {
+  } else if (ktest_get_mode() == KTEST_RECORD) {
     unsigned int ret = arc4random();
     if (KTEST_DEBUG) printf("ktest_arc4random recording %u\n", ret);
     KTOV_append(&ktov, ktest_object_names[ARC4RNG], sizeof(ret), &ret);
     return ret;
-  } else if (arg_ktest_mode == KTEST_PLAYBACK) {
+  } else if (ktest_get_mode() == KTEST_PLAYBACK) {
     KTestObject *o = KTOV_next_object(&ktov, ktest_object_names[ARC4RNG]);
     assert(o->numBytes == sizeof(unsigned int));
     unsigned int ret = *((unsigned int*) o->bytes);
@@ -38,7 +38,7 @@ unsigned int ktest_arc4random()
 int ktest_pipe(int pipefd[2]){
   int ret = pipe(pipefd);
   assert(ret == 0); //assume success
-  if((arg_ktest_mode == KTEST_RECORD) || (arg_ktest_mode == KTEST_PLAYBACK)) {
+  if((ktest_get_mode() == KTEST_RECORD) || (ktest_get_mode() == KTEST_PLAYBACK)) {
     insert_ktest_sockfd(pipefd[0]);
     insert_ktest_sockfd(pipefd[1]);
   }
@@ -48,7 +48,7 @@ int ktest_pipe(int pipefd[2]){
 int ktest_open(const char *path, int oflag){
   int fd = open(path, oflag);
   assert(fd >= 0);
-  if((arg_ktest_mode == KTEST_RECORD) || (arg_ktest_mode == KTEST_PLAYBACK)) {
+  if((ktest_get_mode() == KTEST_RECORD) || (ktest_get_mode() == KTEST_PLAYBACK)) {
     insert_ktest_sockfd(fd);
   }
   return fd;
@@ -56,20 +56,18 @@ int ktest_open(const char *path, int oflag){
 
 int ktest_openpty(int *ptyfd, int *ttyfd, char *name, const struct termios *termp, const struct winsize *winp)
 {
-  //We're assuming that arg_ktest_mode is consistent with KTest.c's ktest_mode.
-  enum kTestMode ktest_mode = arg_ktest_mode;
   assert(name  == 0);
   assert(termp == 0);
   assert(winp  == 0);
-  if (ktest_mode == KTEST_NONE){
+  if (ktest_get_mode() == KTEST_NONE){
     return openpty(ptyfd, ttyfd, name, termp, winp);
-  }else if(ktest_mode == KTEST_RECORD) { // passthrough
+  }else if(ktest_get_mode() == KTEST_RECORD) { // passthrough
     int ret = openpty(ptyfd, ttyfd, name, termp, winp);
     insert_ktest_sockfd(*ptyfd); // record the socket descriptor of interest
     insert_ktest_sockfd(*ttyfd); // record the socket descriptor of interest
 
     return ret;
-  } else if (ktest_mode == KTEST_PLAYBACK) {
+  } else if (ktest_get_mode() == KTEST_PLAYBACK) {
     int ret = openpty(ptyfd, ttyfd, name, termp, winp);
     assert(*ptyfd >= 0);
     assert(*ttyfd >= 0);

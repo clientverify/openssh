@@ -14,9 +14,9 @@ int bn_to_buf(unsigned char **buf_ptr, BIGNUM* bn){
 
 DH* ktest_verify_choose_dh(int min, int wantbits, int max){
   printf("ktest_verify_choose_dh entered\n");
-  if(arg_ktest_mode == KTEST_NONE){
+  if(ktest_get_mode() == KTEST_NONE){
     return choose_dh(min, wantbits, max);
-  } else if (arg_ktest_mode == KTEST_RECORD){
+  } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_choose_dh calling writesocket with min %d, wantbits %d, max %d\n", min, wantbits, max);
     ktest_writesocket(verification_socket, (char*)&min, sizeof(min));
     ktest_writesocket(verification_socket, (char*)&wantbits, sizeof(wantbits));
@@ -35,7 +35,7 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
     free(to);
 
     return ret;
-  } else if (arg_ktest_mode == KTEST_PLAYBACK){
+  } else if (ktest_get_mode() == KTEST_PLAYBACK){
     printf("ktest_verify_choose_dh calling writesocket with min %d, wantbits %d, max %d\n", min, wantbits, max);
     ktest_writesocket(verification_socket, (char*)&min, sizeof(min));
     ktest_writesocket(verification_socket, (char*)&wantbits, sizeof(wantbits));
@@ -64,9 +64,9 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
 
 int ktest_verify_DH_generate_key(DH *dh){
   printf("ktest_verify_DH_generate_key entered\n");
-  if(arg_ktest_mode == KTEST_NONE){
+  if(ktest_get_mode() == KTEST_NONE){
     return DH_generate_key(dh);
-  } else if (arg_ktest_mode == KTEST_RECORD){
+  } else if (ktest_get_mode() == KTEST_RECORD){
     unsigned char *to;
     int len = bn_to_buf(&to, dh->p);
     ktest_writesocket(verification_socket, to, len);
@@ -116,7 +116,7 @@ int ktest_verify_DH_generate_key(DH *dh){
 
     ktest_record_readbuf(verification_socket, &ret, sizeof(ret));
     return ret;
-  } else if (arg_ktest_mode == KTEST_PLAYBACK){
+  } else if (ktest_get_mode() == KTEST_PLAYBACK){
     //writing inputs
     unsigned char *to;
     int len = bn_to_buf(&to, dh->p);

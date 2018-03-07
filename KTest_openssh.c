@@ -21,12 +21,7 @@ unsigned int ktest_arc4random()
     assert(o->numBytes == sizeof(unsigned int));
     unsigned int ret = *((unsigned int*) o->bytes);
 
-    if (KTEST_DEBUG){
-      printf("arc4random playback %u\n", ret);
-      unsigned int tmp = arc4random();
-      if (tmp != ret) printf("arc4random playback ret should be: %u is: %u\n", tmp, ret);
-      assert(tmp == ret);
-    }
+    if (KTEST_DEBUG) printf("arc4random playback %u\n", ret);
     return ret;
   } else {
     perror("ktest_RAND_bytes coding error - should never get here");

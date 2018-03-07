@@ -21,7 +21,11 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
     ktest_writesocket(verification_socket, (char*)&min, sizeof(min));
     ktest_writesocket(verification_socket, (char*)&wantbits, sizeof(wantbits));
     ktest_writesocket(verification_socket, (char*)&max, sizeof(max));
+
+
+    ktest_set_mode_off();
     DH* ret = choose_dh(min, wantbits, max);
+    ktest_set_mode_on();
 
     //modulus (p):
     unsigned char *to;
@@ -40,9 +44,6 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
     ktest_writesocket(verification_socket, (char*)&min, sizeof(min));
     ktest_writesocket(verification_socket, (char*)&wantbits, sizeof(wantbits));
     ktest_writesocket(verification_socket, (char*)&max, sizeof(max));
-
-    //dealing with the fact that the call this models has a single call to
-    ktest_arc4random();
 
     unsigned char *from = malloc(MAX_LEN);
 
@@ -88,11 +89,13 @@ int ktest_verify_DH_generate_key(DH *dh){
       ktest_writesocket(verification_socket, NULL, 0);
     }
 
+    ktest_set_mode_off();
     DH* dh_2 = DH_new();
     dh_2->p        = dh->p;
     dh_2->g        = dh->g;
     dh_2->priv_key = dh->priv_key;
     int ret = DH_generate_key(dh_2);
+    ktest_set_mode_on();
 
     if(!priv_was_null){
       dh->priv_key = dh_2->priv_key;

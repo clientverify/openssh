@@ -70,7 +70,11 @@ ssh_rsa_sign(
 	slen = RSA_size(key->rsa);
 	sig = xmalloc(slen);
 
+#ifdef CLIVER
+	ok = ktest_verify_RSA_sign(nid, digest, dlen, sig, &len, key->rsa);
+#else
 	ok = RSA_sign(nid, digest, dlen, sig, &len, key->rsa);
+#endif
 	memset(digest, 'd', sizeof(digest));
 
 	if (ok != 1) {

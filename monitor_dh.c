@@ -1,6 +1,7 @@
 #include "monitor_dh.h"
 #include "KTest_openssh.h"
 #include <assert.h>
+#include <openssl/rsa.h>
 
 #define MAX_LEN 1000
 int bn_to_buf(unsigned char **buf_ptr, BIGNUM* bn){
@@ -158,6 +159,89 @@ int ktest_verify_DH_generate_key(DH *dh){
     int ret = -1;
     ktest_readsocket(verification_socket, &ret, sizeof(ret));
 
+    return ret;
+
+  } else assert(0);
+}
+
+
+int ktest_verify_RSA_sign(int type, const unsigned char *m, unsigned int m_len,
+        unsigned char *sigret, unsigned int *siglen, RSA *rsa){
+  printf("ktest_verify_RSA_sign entered\n");
+  if(ktest_get_mode() == KTEST_NONE){
+    return RSA_sign(type, m, m_len, sigret, siglen, rsa);
+  } else if (ktest_get_mode() == KTEST_RECORD){
+    //Send:  type, m (m_len)
+    ktest_writesocket(verification_socket, &type, sizeof(type));
+    ktest_writesocket(verification_socket, m, m_len);
+
+    //Send important parts of rsa: n, d, p, q
+    unsigned char *to;
+    int len = bn_to_buf(&to, rsa->n);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, rsa->d);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, rsa->p);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, rsa->q);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+
+    ktest_set_mode_off();
+    RSA* rsa_2 = RSA_new();
+    rsa_2->n = rsa->n;
+    rsa_2->d = rsa->d;
+    rsa_2->p = rsa->p;
+    rsa_2->q = rsa->q;
+    int ret = RSA_sign(type, m, m_len, sigret, siglen, rsa_2);
+
+    //must not free the following:
+    rsa_2->n = NULL;
+    rsa_2->d = NULL;
+    rsa_2->p = NULL;
+    rsa_2->q = NULL;
+    RSA_free(rsa_2);
+    ktest_set_mode_on();
+
+    //Return values: sig, siglen, ret
+    ktest_record_readbuf(verification_socket, sigret, *siglen);
+
+    ktest_record_readbuf(verification_socket, &ret, sizeof(ret));
+    return ret;
+  } else if (ktest_get_mode() == KTEST_PLAYBACK){
+    //Send:  type, m (m_len)
+    ktest_writesocket(verification_socket, &type, sizeof(type));
+    ktest_writesocket(verification_socket, m, m_len);
+
+    //Send important parts of rsa: n, d, p, q
+    unsigned char *to;
+    int len = bn_to_buf(&to, rsa->n);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, rsa->d);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, rsa->p);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, rsa->q);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    //Return values: sig, siglen, ret
+    *siglen = ktest_readsocket(verification_socket, sigret, RSA_size(rsa));
+    int ret = -1;
+    ktest_readsocket(verification_socket, &ret, sizeof(ret));
     return ret;
 
   } else assert(0);

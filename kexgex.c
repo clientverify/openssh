@@ -347,7 +347,11 @@ kexgex_server(Kex *kex)
 
 	klen = DH_size(dh);
 	kbuf = xmalloc(klen);
+#ifdef CLIVER
+	kout = ktest_verify_DH_compute_key(kbuf, dh_client_pub, dh);
+#else
 	kout = DH_compute_key(kbuf, dh_client_pub, dh);
+#endif
 #ifdef DEBUG_KEXDH
 	dump_digest("shared secret", kbuf, kout);
 #endif

@@ -165,6 +165,75 @@ int ktest_verify_DH_generate_key(DH *dh){
 }
 
 
+int ktest_verify_DH_compute_key(unsigned char *key, BIGNUM *pub_key, DH *dh){
+  printf("ktest_verify_DH_compute_key entered\n");
+  if(ktest_get_mode() == KTEST_NONE){
+    return DH_compute_key(key, pub_key, dh);
+  } else if (ktest_get_mode() == KTEST_RECORD){
+    //send pub_key
+    unsigned char *to;
+    int len = bn_to_buf(&to, pub_key);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    //the parts of dh we need:
+    len = bn_to_buf(&to, dh->p);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, dh->g);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, dh->priv_key);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    ktest_set_mode_off();  //Turn off recording
+    DH* dh_2 = DH_new();
+    dh_2->p        = dh->p;
+    dh_2->g        = dh->g;
+    dh_2->priv_key = dh->priv_key;
+    int ret = ktest_verify_DH_compute_key(key, pub_key, dh_2);
+    assert(ret > -1);
+
+    //must not free the following:
+    dh_2->p        = NULL;
+    dh_2->g        = NULL;
+    dh_2->priv_key = NULL;
+    dh_2->pub_key  = NULL;
+    DH_free(dh_2);
+    ktest_set_mode_on();  //Resume recording
+
+    ktest_record_readbuf(verification_socket, key, ret);
+    return ret;
+  } else if (ktest_get_mode() == KTEST_PLAYBACK){
+    //send pub_key
+    unsigned char *to;
+    int len = bn_to_buf(&to, pub_key);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    //the parts of dh we need:
+    len = bn_to_buf(&to, dh->p);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, dh->g);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    len = bn_to_buf(&to, dh->priv_key);
+    ktest_writesocket(verification_socket, to, len);
+    free(to);
+
+    //From Man: key must point to DH_size(dh) bytes of memory.
+    int ret = ktest_readsocket(verification_socket, key, DH_size(dh));
+    return ret;
+  } else assert(0);
+}
+
+
 int ktest_verify_RSA_sign(int type, const unsigned char *m, unsigned int m_len,
         unsigned char *sigret, unsigned int *siglen, RSA *rsa){
   printf("ktest_verify_RSA_sign entered\n");

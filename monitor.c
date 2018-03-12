@@ -17,12 +17,21 @@ static const char *__pampasswd = NULL;
 
 
 
-//TODO: go back and make this record and playback
 void ktest_verify_set_password(char* password){
-  __pampasswd = password;
+  printf("ktest_verify_set_password entered\n");
+  if(ktest_get_mode() == KTEST_NONE){
+    __pampasswd = password;
+  } else if (ktest_get_mode() == KTEST_RECORD){
+    ktest_writesocket(verification_socket, password, strlen(password)+1);
+    __pampasswd = password;
+    printf("ktest_verify_set_password called with: %s\n",  password);
+  } else if (ktest_get_mode() == KTEST_PLAYBACK){
+    ktest_writesocket(verification_socket, password, strlen(password)+1);
+    __pampasswd = password;
+    printf("ktest_verify_set_password called with: %s\n",  password);
+  } else assert(0);
 }
 
-//TODO: go back and make this record and playback
 int ktest_verify_pamh_not_null(void){
   printf("ktest_verify_pam_acct_mgmt entered\n");
   if(ktest_get_mode() == KTEST_NONE){
@@ -55,11 +64,7 @@ int ktest_verify_pamh_not_null(void){
  *  and outputs messages to stderr. This mode is used if pam_chauthtok()
  *  is called to update expired passwords.
  */
-//TODO: change strdup back to xstrdup
 enum PAMSTATE pamstate = INITIAL_LOGIN;
-enum PAMSTATE get_pamstate(){
-  return pamstate;
-}
 void set_pamstate(enum PAMSTATE to){
   pamstate = to;
 }
@@ -165,9 +170,23 @@ static struct pam_conv conv = {
 };
  
 
-//TODO: deal with this model recording and playing back.
 char* ktest_verify_pam_strerror(int ret_val){
-  return pam_strerror(pamh, ret_val);
+  int MAX_LEN = 50;
+  if(ktest_get_mode() == KTEST_NONE){
+    return pam_strerror(pamh, ret_val);
+  } else if (ktest_get_mode() == KTEST_RECORD){
+    char* ret = pam_strerror(pamh, ret_val);
+    printf("ktest_verify_pam_strerror calling record_readbuf with ret %s\n", ret);
+    assert(strlen(ret)+1 < MAX_LEN);
+    ktest_record_readbuf(verification_socket, ret, strlen(ret)+1);
+    return ret;
+  } else if (ktest_get_mode() == KTEST_PLAYBACK){
+    char* ret = malloc(MAX_LEN);
+    ktest_readsocket(verification_socket, ret, MAX_LEN);
+    printf("ktest_verify_pam_strerror calling record_readbuf with ret %s\n", ret);
+    return ret;
+  } else assert(0);
+
 }
 
 //Todo: record the arguements to this function in order to verify them.
@@ -226,8 +245,6 @@ int ktest_verify_pam_set_item(int item_type, const void *item){
   }
 }
 
-//TODO: record the arguements to this function in order to verify them.
-//This one will be rather challenging
 int ktest_verify_pam_start(const char *service_name, const char *user){
   printf("ktest_verify_pam_start entered\n");
   if(ktest_get_mode() == KTEST_NONE){

@@ -56,6 +56,7 @@ struct Cipher {
 	EVP_CIPHER	*(*evptype)(void);
 } ciphers[] = {
 	{ "none", 		SSH_CIPHER_NONE, 8, 0, EVP_enc_null },
+#if 0
 	{ "des", 		SSH_CIPHER_DES, 8, 8, EVP_des_cbc },
 	{ "3des", 		SSH_CIPHER_3DES, 8, 16, evp_ssh1_3des },
 	{ "blowfish", 		SSH_CIPHER_BLOWFISH, 8, 32, evp_ssh1_bf },
@@ -67,6 +68,7 @@ struct Cipher {
 	{ "aes128-cbc", 	SSH_CIPHER_SSH2, 16, 16, evp_rijndael },
 	{ "aes192-cbc", 	SSH_CIPHER_SSH2, 16, 24, evp_rijndael },
 	{ "aes256-cbc", 	SSH_CIPHER_SSH2, 16, 32, evp_rijndael },
+#endif
 
 	{ NULL,			SSH_CIPHER_ILLEGAL, 0, 0, NULL }
 };

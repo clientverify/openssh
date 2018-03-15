@@ -25,14 +25,10 @@
  */
 #define KEX_DEFAULT_KEX		"diffie-hellman-group-exchange-sha1,diffie-hellman-group1-sha1"
 #define	KEX_DEFAULT_PK_ALG	"ssh-rsa,ssh-dss"
-#define	KEX_DEFAULT_ENCRYPT \
-	"aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc,arcfour," \
-	"aes192-cbc,aes256-cbc"
+#define	KEX_DEFAULT_ENCRYPT "none"
 #define	KEX_DEFAULT_MAC \
-	"hmac-md5,hmac-sha1,hmac-ripemd160," \
-	"hmac-ripemd160@openssh.com," \
-	"hmac-sha1-96,hmac-md5-96"
-#define	KEX_DEFAULT_COMP	"none,zlib"
+	"hmac-sha1"
+#define	KEX_DEFAULT_COMP	"none"
 #define	KEX_DEFAULT_LANG	""
 
 

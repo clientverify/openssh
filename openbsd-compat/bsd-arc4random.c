@@ -51,7 +51,11 @@ unsigned int arc4random(void)
 		if (!first_time)
 			seed_rng();
 		first_time = 0;
+#ifdef CLIVER
+		ktest_arc4random_stir();
+#else
 		arc4random_stir();
+#endif
 	}
 
 	RC4(&rc4, sizeof(r), (unsigned char *)&r, (unsigned char *)&r);

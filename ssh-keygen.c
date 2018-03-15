@@ -968,7 +968,11 @@ main(int ac, char **av)
 
 	init_rng();
 	seed_rng();
+#ifdef CLIVER
+	ktest_arc4random_stir();
+#else
 	arc4random_stir();
+#endif
 
 	if (key_type_name == NULL) {
 		printf("You must specify a key type (-t).\n");
@@ -1060,7 +1064,11 @@ passphrase_again:
 
 	/* Clear the private key and the random number generator. */
 	key_free(private);
+#ifdef CLIVER
+	ktest_arc4random_stir();
+#else
 	arc4random_stir();
+#endif
 
 	if (!quiet)
 		printf("Your identification has been saved in %s.\n", identity_file);

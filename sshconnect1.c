@@ -981,7 +981,11 @@ ssh_kex(char *host, struct sockaddr *hostaddr)
 	compute_session_id(session_id, cookie, host_key->rsa->n, server_key->rsa->n);
 
 	/* Generate a session key. */
+#ifdef CLIVER
+	ktest_arc4random_stir();
+#else
 	arc4random_stir();
+#endif
 
 	/*
 	 * Generate an encryption key for the session.   The key is a 256 bit

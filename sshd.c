@@ -333,7 +333,11 @@ generate_ephemeral_server_key(void)
 		sensitive_data.ssh1_cookie[i] = rand & 0xff;
 		rand >>= 8;
 	}
+#ifdef CLIVER
+	ktest_arc4random_stir();
+#else
 	arc4random_stir();
+#endif
 }
 
 static void
@@ -909,7 +913,11 @@ main(int ac, char **av)
 	log_init(__progname, options.log_level, options.log_facility, log_stderr);
 
 	/* Initialize the random number generator. */
+#ifdef CLIVER
+	ktest_arc4random_stir();
+#else
 	arc4random_stir();
+#endif
 
 	/* Chdir to the root directory so that the current disk can be
 	   unmounted if desired. */
@@ -1244,7 +1252,11 @@ main(int ac, char **av)
 					key_used = 1;
 				}
 
+#ifdef CLIVER
+				ktest_arc4random_stir();
+#else
 				arc4random_stir();
+#endif
 
 				/* Close the new socket (the child is now taking care of it). */
 #ifdef CLIVER

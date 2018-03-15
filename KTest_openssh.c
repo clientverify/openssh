@@ -24,7 +24,23 @@ unsigned int ktest_arc4random()
     if (KTEST_DEBUG) printf("arc4random playback %u\n", ret);
     return ret;
   } else {
-    perror("ktest_RAND_bytes coding error - should never get here");
+    perror("ktest_arc4random coding error - should never get here");
+    exit(4);
+  }
+}
+
+void ktest_arc4random_stir(void)
+{
+  if (ktest_get_mode() == KTEST_NONE) {
+    return arc4random_stir();
+  } else if (ktest_get_mode() == KTEST_RECORD) {
+    ktest_set_mode_off();
+    arc4random_stir();
+    ktest_set_mode_on();
+  } else if (ktest_get_mode() == KTEST_PLAYBACK) {
+
+  } else {
+    perror("ktest_arc4random_stir coding error - should never get here");
     exit(4);
   }
 }

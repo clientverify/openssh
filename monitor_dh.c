@@ -9,6 +9,8 @@ int bn_to_buf(unsigned char **buf_ptr, BIGNUM* bn){
     unsigned char *to = malloc(size); 
     int len = BN_bn2bin(bn, to);
     assert(len < MAX_LEN);
+    if(len != size) printf("bn_to_buf len %d != size %d\n", len, size);
+    assert(len == size);
     *buf_ptr = to;
     return len;
 }

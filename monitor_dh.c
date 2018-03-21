@@ -84,9 +84,7 @@ int ktest_verify_DH_generate_key(DH *dh){
     int priv_was_null = -1;
     if(dh->priv_key != NULL){
       priv_was_null = 0;
-      len = bn_to_buf(&to, dh->priv_key);
-      ktest_writesocket(verification_socket, to, len);
-      free(to);
+      ktest_writesocket(verification_socket, dh->priv_key->d, dh->priv_key->dmax);
     } else {
       priv_was_null = 1;
       ktest_writesocket(verification_socket, NULL, 0);
@@ -96,7 +94,11 @@ int ktest_verify_DH_generate_key(DH *dh){
     DH* dh_2 = DH_new();
     dh_2->p        = dh->p;
     dh_2->g        = dh->g;
-    dh_2->priv_key = dh->priv_key;
+    //Creating memory leaks:
+    dh_2->priv_key = BN_new();
+    dh_2->priv_key->d = dh->priv_key->d;
+    dh_2->priv_key->dmax = dh->priv_key->dmax;
+    dh_2->priv_key->top = dh->priv_key->dmax;
     int ret = DH_generate_key(dh_2);
     ktest_set_mode_on();
 
@@ -138,9 +140,7 @@ int ktest_verify_DH_generate_key(DH *dh){
     int priv_was_null = -1;
     if(dh->priv_key != NULL){
       priv_was_null = 0;
-      len = bn_to_buf(&to, dh->priv_key);
-      ktest_writesocket(verification_socket, to, len);
-      free(to);
+      ktest_writesocket(verification_socket, dh->priv_key->d, dh->priv_key->dmax);
     } else {
       priv_was_null = 1;
       ktest_writesocket(verification_socket, NULL, 0);

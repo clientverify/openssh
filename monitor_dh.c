@@ -21,9 +21,9 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
     return choose_dh(min, wantbits, max);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_choose_dh calling writesocket with min %d, wantbits %d, max %d\n", min, wantbits, max);
-    ktest_writesocket(verification_socket, (char*)&min, sizeof(min));
-    ktest_writesocket(verification_socket, (char*)&wantbits, sizeof(wantbits));
-    ktest_writesocket(verification_socket, (char*)&max, sizeof(max));
+    ktest_writesocket(monitor_socket, (char*)&min, sizeof(min));
+    ktest_writesocket(monitor_socket, (char*)&wantbits, sizeof(wantbits));
+    ktest_writesocket(monitor_socket, (char*)&max, sizeof(max));
 
 
     ktest_set_mode_off();
@@ -33,29 +33,29 @@ DH* ktest_verify_choose_dh(int min, int wantbits, int max){
     //modulus (p):
     unsigned char *to;
     int len = bn_to_buf(&to, ret->p);
-    ktest_record_readbuf(verification_socket, (char*)to, len);
+    ktest_record_readbuf(monitor_socket, (char*)to, len);
     free(to);
 
     //gen (g):
     len = bn_to_buf(&to, ret->g);
-    ktest_record_readbuf(verification_socket, (char*)to, len);
+    ktest_record_readbuf(monitor_socket, (char*)to, len);
     free(to);
 
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     printf("ktest_verify_choose_dh calling writesocket with min %d, wantbits %d, max %d\n", min, wantbits, max);
-    ktest_writesocket(verification_socket, (char*)&min, sizeof(min));
-    ktest_writesocket(verification_socket, (char*)&wantbits, sizeof(wantbits));
-    ktest_writesocket(verification_socket, (char*)&max, sizeof(max));
+    ktest_writesocket(monitor_socket, (char*)&min, sizeof(min));
+    ktest_writesocket(monitor_socket, (char*)&wantbits, sizeof(wantbits));
+    ktest_writesocket(monitor_socket, (char*)&max, sizeof(max));
 
     unsigned char *from = malloc(MAX_LEN);
 
     //recover p
-    int len = ktest_readsocket(verification_socket, (char*)from, MAX_LEN);
+    int len = ktest_readsocket(monitor_socket, (char*)from, MAX_LEN);
     BIGNUM *p = BN_bin2bn(from, len, NULL);
 
     //recover g
-    len = ktest_readsocket(verification_socket, (char*)from, MAX_LEN);
+    len = ktest_readsocket(monitor_socket, (char*)from, MAX_LEN);
     BIGNUM *g = BN_bin2bn(from, len, NULL);
 
     free(from);
@@ -73,21 +73,21 @@ int ktest_verify_DH_generate_key(DH *dh){
   } else if (ktest_get_mode() == KTEST_RECORD){
     unsigned char *to;
     int len = bn_to_buf(&to, dh->p);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, dh->g);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     //may be null...
     int priv_was_null = -1;
     if(dh->priv_key != NULL){
       priv_was_null = 0;
-      ktest_writesocket(verification_socket, dh->priv_key->d, dh->priv_key->dmax);
+      ktest_writesocket(monitor_socket, dh->priv_key->d, dh->priv_key->dmax);
     } else {
       priv_was_null = 1;
-      ktest_writesocket(verification_socket, NULL, 0);
+      ktest_writesocket(monitor_socket, NULL, 0);
     }
 
     ktest_set_mode_off();
@@ -105,13 +105,13 @@ int ktest_verify_DH_generate_key(DH *dh){
     if(!priv_was_null){
       dh->priv_key = dh_2->priv_key;
       len = bn_to_buf(&to, dh->priv_key);
-      ktest_record_readbuf(verification_socket, to, len);
+      ktest_record_readbuf(monitor_socket, to, len);
       free(to);
     }
 
     dh->pub_key  = dh_2->pub_key;
     len = bn_to_buf(&to, dh->pub_key);
-    ktest_record_readbuf(verification_socket, to, len);
+    ktest_record_readbuf(monitor_socket, to, len);
     free(to);
 
 
@@ -122,17 +122,17 @@ int ktest_verify_DH_generate_key(DH *dh){
     dh_2->pub_key  = NULL;
     DH_free(dh_2);
 
-    ktest_record_readbuf(verification_socket, &ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, &ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     //writing inputs
     unsigned char *to;
     int len = bn_to_buf(&to, dh->p);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, dh->g);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     //If dh->priv_key is null, we don't need to send it, but we do need to read
@@ -140,26 +140,26 @@ int ktest_verify_DH_generate_key(DH *dh){
     int priv_was_null = -1;
     if(dh->priv_key != NULL){
       priv_was_null = 0;
-      ktest_writesocket(verification_socket, dh->priv_key->d, dh->priv_key->dmax);
+      ktest_writesocket(monitor_socket, dh->priv_key->d, dh->priv_key->dmax);
     } else {
       priv_was_null = 1;
-      ktest_writesocket(verification_socket, NULL, 0);
+      ktest_writesocket(monitor_socket, NULL, 0);
     }
 
     //Reading results
     unsigned char *from = malloc(MAX_LEN);
     if(!priv_was_null){//Reading dh->priv_key if was null
-      len = ktest_readsocket(verification_socket, (char*)from, MAX_LEN);
+      len = ktest_readsocket(monitor_socket, (char*)from, MAX_LEN);
       dh->priv_key = BN_bin2bn(from, len, NULL);
     }
 
     //Reading dh->pub_key
-    len = ktest_readsocket(verification_socket, (char*)from, MAX_LEN);
+    len = ktest_readsocket(monitor_socket, (char*)from, MAX_LEN);
     dh->pub_key = BN_bin2bn(from, len, NULL);
     free(from);
 
     int ret = -1;
-    ktest_readsocket(verification_socket, &ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, &ret, sizeof(ret));
 
     return ret;
 
@@ -175,20 +175,20 @@ int ktest_verify_DH_compute_key(unsigned char *key, BIGNUM *pub_key, DH *dh){
     //send pub_key
     unsigned char *to;
     int len = bn_to_buf(&to, pub_key);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     //the parts of dh we need:
     len = bn_to_buf(&to, dh->p);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, dh->g);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, dh->priv_key);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     ktest_set_mode_off();  //Turn off recording
@@ -207,30 +207,30 @@ int ktest_verify_DH_compute_key(unsigned char *key, BIGNUM *pub_key, DH *dh){
     DH_free(dh_2);
     ktest_set_mode_on();  //Resume recording
 
-    ktest_record_readbuf(verification_socket, key, ret);
+    ktest_record_readbuf(monitor_socket, key, ret);
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     //send pub_key
     unsigned char *to;
     int len = bn_to_buf(&to, pub_key);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     //the parts of dh we need:
     len = bn_to_buf(&to, dh->p);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, dh->g);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, dh->priv_key);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     //From Man: key must point to DH_size(dh) bytes of memory.
-    int ret = ktest_readsocket(verification_socket, key, DH_size(dh));
+    int ret = ktest_readsocket(monitor_socket, key, DH_size(dh));
     return ret;
   } else assert(0);
 }
@@ -243,25 +243,25 @@ int ktest_verify_RSA_sign(int type, const unsigned char *m, unsigned int m_len,
     return RSA_sign(type, m, m_len, sigret, siglen, rsa);
   } else if (ktest_get_mode() == KTEST_RECORD){
     //Send:  type, m (m_len)
-    ktest_writesocket(verification_socket, &type, sizeof(type));
-    ktest_writesocket(verification_socket, m, m_len);
+    ktest_writesocket(monitor_socket, &type, sizeof(type));
+    ktest_writesocket(monitor_socket, m, m_len);
 
     //Send important parts of rsa: n, d, p, q
     unsigned char *to;
     int len = bn_to_buf(&to, rsa->n);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, rsa->d);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, rsa->p);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, rsa->q);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
 
@@ -282,37 +282,37 @@ int ktest_verify_RSA_sign(int type, const unsigned char *m, unsigned int m_len,
     ktest_set_mode_on();
 
     //Return values: sig, siglen, ret
-    ktest_record_readbuf(verification_socket, sigret, *siglen);
+    ktest_record_readbuf(monitor_socket, sigret, *siglen);
 
-    ktest_record_readbuf(verification_socket, &ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, &ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     //Send:  type, m (m_len)
-    ktest_writesocket(verification_socket, &type, sizeof(type));
-    ktest_writesocket(verification_socket, m, m_len);
+    ktest_writesocket(monitor_socket, &type, sizeof(type));
+    ktest_writesocket(monitor_socket, m, m_len);
 
     //Send important parts of rsa: n, d, p, q
     unsigned char *to;
     int len = bn_to_buf(&to, rsa->n);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, rsa->d);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, rsa->p);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     len = bn_to_buf(&to, rsa->q);
-    ktest_writesocket(verification_socket, to, len);
+    ktest_writesocket(monitor_socket, to, len);
     free(to);
 
     //Return values: sig, siglen, ret
-    *siglen = ktest_readsocket(verification_socket, sigret, RSA_size(rsa));
+    *siglen = ktest_readsocket(monitor_socket, sigret, RSA_size(rsa));
     int ret = -1;
-    ktest_readsocket(verification_socket, &ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, &ret, sizeof(ret));
     return ret;
 
   } else assert(0);

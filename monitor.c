@@ -22,11 +22,11 @@ void ktest_verify_set_password(char* password){
   if(ktest_get_mode() == KTEST_NONE){
     __pampasswd = password;
   } else if (ktest_get_mode() == KTEST_RECORD){
-    ktest_writesocket(verification_socket, password, strlen(password)+1);
+    ktest_writesocket(monitor_socket, password, strlen(password)+1);
     __pampasswd = password;
     printf("ktest_verify_set_password called with: %s\n",  password);
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, password, strlen(password)+1);
+    ktest_writesocket(monitor_socket, password, strlen(password)+1);
     __pampasswd = password;
     printf("ktest_verify_set_password called with: %s\n",  password);
   } else assert(0);
@@ -42,11 +42,11 @@ int ktest_verify_pamh_not_null(void){
     if(pamh == NULL) ret = 0;
     else ret = 1;
     printf("ktest_verify_pamh_not_null calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -178,11 +178,11 @@ char* ktest_verify_pam_strerror(int ret_val){
     char* ret = pam_strerror(pamh, ret_val);
     printf("ktest_verify_pam_strerror calling record_readbuf with ret %s\n", ret);
     assert(strlen(ret)+1 < MAX_LEN);
-    ktest_record_readbuf(verification_socket, ret, strlen(ret)+1);
+    ktest_record_readbuf(monitor_socket, ret, strlen(ret)+1);
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     char* ret = malloc(MAX_LEN);
-    ktest_readsocket(verification_socket, ret, MAX_LEN);
+    ktest_readsocket(monitor_socket, ret, MAX_LEN);
     printf("ktest_verify_pam_strerror calling record_readbuf with ret %s\n", ret);
     return ret;
   } else assert(0);
@@ -207,15 +207,15 @@ int ktest_verify_pam_set_item(int item_type, const void *item){
     const char* item_str = (const char*)item;
     if (ktest_get_mode() == KTEST_RECORD){
       printf("ktest_verify_pam_set_item calling writesocket with item %s\n", item_str);
-      ktest_writesocket(verification_socket, item_str, strlen(item_str)+1);
+      ktest_writesocket(monitor_socket, item_str, strlen(item_str)+1);
       int ret = pam_set_item(pamh, item_type, item);
       printf("ktest_verify_pam_set_item calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-      ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+      ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
       return ret;
     } else if (ktest_get_mode() == KTEST_PLAYBACK){
-      ktest_writesocket(verification_socket, item_str, strlen(item_str)+1);
+      ktest_writesocket(monitor_socket, item_str, strlen(item_str)+1);
       int ret = -1;
-      ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+      ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
       return ret;
     } else {
       assert(0);
@@ -224,18 +224,18 @@ int ktest_verify_pam_set_item(int item_type, const void *item){
     const char* item_str = (const char*)item;
     if (ktest_get_mode() == KTEST_RECORD){
       printf("ktest_verify_pam_set_item calling writesocket with item %s\n", item_str);
-      ktest_writesocket(verification_socket, item_str, strlen(item_str)+1);
+      ktest_writesocket(monitor_socket, item_str, strlen(item_str)+1);
       int ret;
       if (strcmp(item_str, "conv") == 0)
         ret = pam_set_item(pamh, item_type, &conv);
       else assert(0);
       printf("ktest_verify_pam_set_item calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-      ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+      ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
       return ret;
     } else if (ktest_get_mode() == KTEST_PLAYBACK){
-      ktest_writesocket(verification_socket, item_str, strlen(item_str)+1);
+      ktest_writesocket(monitor_socket, item_str, strlen(item_str)+1);
       int ret = -1;
-      ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+      ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
       return ret;
     } else {
       assert(0);
@@ -251,20 +251,20 @@ int ktest_verify_pam_start(const char *service_name, const char *user){
    return pam_start(service_name, user, &conv, &pamh);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_start calling writesocket with service_name %s\n", service_name);
-    ktest_writesocket(verification_socket, service_name, strlen(service_name));
+    ktest_writesocket(monitor_socket, service_name, strlen(service_name));
     printf("ktest_verify_pam_start calling writesocket with user %s\n", user);
-    ktest_writesocket(verification_socket, user, strlen(user));
+    ktest_writesocket(monitor_socket, user, strlen(user));
     int ret = pam_start(service_name, user, &conv, &pamh);
     printf("ktest_verify_pam_start calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
     printf("ktest_verify_pam_start calling writesocket with service_name %s\n", service_name);
-    ktest_writesocket(verification_socket, service_name, strlen(service_name));
+    ktest_writesocket(monitor_socket, service_name, strlen(service_name));
     printf("ktest_verify_pam_start calling writesocket with user %s\n", user);
-    ktest_writesocket(verification_socket, user, strlen(user));
+    ktest_writesocket(monitor_socket, user, strlen(user));
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -278,15 +278,15 @@ int ktest_verify_pam_acct_mgmt(int flags){
     return pam_acct_mgmt(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_acct_mgmt calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_acct_mgmt(pamh, flags);
     printf("ktest_verify_pam_acct_mgmt calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -297,15 +297,15 @@ int ktest_verify_pam_setcred(int flags){
     return pam_setcred(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_setcred calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_setcred(pamh, flags);
     printf("ktest_verify_pam_setcred calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
    return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
    int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
    return ret;
   } else assert(0);
 }
@@ -316,15 +316,15 @@ int ktest_verify_pam_chauthtok(int flags){
     return pam_chauthtok(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_chauthtok calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_chauthtok(pamh, flags);
     printf("ktest_verify_pam_chauthtok calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -335,15 +335,15 @@ int ktest_verify_pam_open_session(int flags){
     return pam_open_session(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_open_session calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_open_session(pamh, flags);
     printf("ktest_verify_pam_open_session calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -355,15 +355,15 @@ int ktest_verify_pam_authenticate(int flags){
     return pam_authenticate(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_authenticate calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_authenticate(pamh, flags);
     printf("ktest_verify_pam_authenticate calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -374,15 +374,15 @@ int ktest_verify_pam_close_session(int flags){
     return pam_end(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_close_session calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_close_session(pamh, flags);
     printf("ktest_verify_pam_close_session calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = -1;
-    ktest_readsocket(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else assert(0);
 }
@@ -393,15 +393,15 @@ int ktest_verify_pam_end(int flags){
     return pam_end(pamh, flags);
   } else if (ktest_get_mode() == KTEST_RECORD){
     printf("ktest_verify_pam_end calling writesocket with flags %d, &flags %p, sizeof(flags) %lu\n", flags, &flags, sizeof(flags));
-    ktest_writesocket(verification_socket, (char*)&flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, (char*)&flags, sizeof(flags));
     int ret = pam_end(pamh, flags);
     printf("ktest_verify_pam_end calling record_readbuf with ret %d, &ret %p, sizeof(ret) %lu\n", ret, &ret, sizeof(ret));
-    ktest_record_readbuf(verification_socket, (char*)&ret, sizeof(ret));
+    ktest_record_readbuf(monitor_socket, (char*)&ret, sizeof(ret));
     return ret;
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(verification_socket, &flags, sizeof(flags));
+    ktest_writesocket(monitor_socket, &flags, sizeof(flags));
     int ret = -1;
-    ktest_readsocket(verification_socket, &ret, sizeof(ret));
+    ktest_readsocket(monitor_socket, &ret, sizeof(ret));
     return ret;
   } else assert(0);
 }

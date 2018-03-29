@@ -345,7 +345,7 @@ wait_until_can_do_something(fd_set **readsetp, fd_set **writesetp, int *maxfdp,
 
 	/* Wait for something to happen, or the timeout to expire. */
 #ifdef CLIVER
-	ret = ktest_select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
+	ret = ktest_select_and_signal((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
 #else
     ret = select((*maxfdp)+1, *readsetp, *writesetp, NULL, tvp);
 #endif

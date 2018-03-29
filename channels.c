@@ -297,7 +297,11 @@ channel_close_fd(int *fdp)
 	int ret = 0, fd = *fdp;
 
 	if (fd != -1) {
+#ifdef CLIVER
+		ret = ktest_close(fd);
+#else
 		ret = close(fd);
+#endif
 		*fdp = -1;
 		if (fd == channel_max_fd)
 			channel_max_fd = channel_find_maxfd();

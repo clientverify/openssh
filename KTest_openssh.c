@@ -28,6 +28,9 @@ unsigned int ktest_arc4random()
     exit(4);
   }
 }
+int ktest_select_and_signal(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout){
+  return ktest_select(nfds, readfds, writefds, exceptfds, timeout);
+}
 
 void ktest_arc4random_stir(void)
 {

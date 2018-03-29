@@ -554,7 +554,11 @@ do_exec_pty(Session *s, const char *command)
 		/* Child.  Reinitialize the log because the pid has changed. */
 		log_init(__progname, options.log_level, options.log_facility, log_stderr);
 		/* Close the master side of the pseudo tty. */
+#ifdef CLIVER
+		ktest_close(ptyfd);
+#else
 		close(ptyfd);
+#endif
 
 		/* Make the pseudo tty our controlling tty. */
 		pty_make_controlling_tty(&ttyfd, s->tty);
@@ -568,7 +572,11 @@ do_exec_pty(Session *s, const char *command)
 			error("dup2 stderr: %s", strerror(errno));
 
 		/* Close the extra descriptor for the pseudo tty. */
+#ifdef CLIVER
+		ktest_close(ttyfd);
+#else
 		close(ttyfd);
+#endif
 
 		/* record login, etc. similar to login(1) */
 #ifndef HAVE_OSF_SIA

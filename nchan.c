@@ -474,7 +474,11 @@ chan_shutdown_read(Channel *c)
 		 * write side has been closed already. (bug on Linux)
 		 * HP-UX may return ENOTCONN also.
 		 */
+#ifdef CLIVER
+		if (ktest_shutdown(c->sock, SHUT_RD) < 0
+#else
 		if (shutdown(c->sock, SHUT_RD) < 0
+#endif
 		    && errno != ENOTCONN)
 			error("channel %d: chan_shutdown_read: "
 			    "shutdown() failed for fd%d [i%d o%d]: %.100s",

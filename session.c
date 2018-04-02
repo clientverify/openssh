@@ -613,7 +613,7 @@ do_exec_pty(Session *s, const char *command)
 	 * simplifies code in server_loop.  The descriptor is bidirectional.
 	 */
 #ifdef CLIVER
-	fdout = ktest_dup(ptyfd);
+	fdout = ktest_dup_initialize_ptyfd(ptyfd);
 #else
 	fdout = dup(ptyfd);
 #endif

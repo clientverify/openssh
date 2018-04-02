@@ -7,6 +7,15 @@
 
 #include "KTest_openssh.h"
 #include "openbsd-compat/bsd-arc4random.h"
+
+int ktest_dup_initialize_ptyfd(int oldfd){
+  assert(pty_socket == oldfd);
+  assert(pty_dup_socket == -1);
+  int newfd = ktest_dup(oldfd);
+  pty_dup_socket = newfd;
+  return newfd;
+}
+
 unsigned int ktest_arc4random()
 {
   if (ktest_get_mode() == KTEST_NONE) {
@@ -77,6 +86,8 @@ int ktest_openpty(int *ptyfd, int *ttyfd, char *name, const struct termios *term
     return openpty(ptyfd, ttyfd, name, termp, winp);
   }else if(ktest_get_mode() == KTEST_RECORD) { // passthrough
     int ret = openpty(ptyfd, ttyfd, name, termp, winp);
+    assert(pty_socket == -1);
+    pty_socket = *ptyfd;
     insert_ktest_sockfd(*ptyfd); // record the socket descriptor of interest
     insert_ktest_sockfd(*ttyfd); // record the socket descriptor of interest
 
@@ -85,6 +96,8 @@ int ktest_openpty(int *ptyfd, int *ttyfd, char *name, const struct termios *term
     int ret = openpty(ptyfd, ttyfd, name, termp, winp);
     assert(*ptyfd >= 0);
     assert(*ttyfd >= 0);
+    assert(pty_socket == -1);
+    pty_socket = *ptyfd;
     insert_ktest_sockfd(*ptyfd); // record the socket descriptor of interest
     insert_ktest_sockfd(*ttyfd); // record the socket descriptor of interest
 

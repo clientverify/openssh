@@ -189,11 +189,7 @@ do_authenticated(Authctxt *authctxt)
 		do_authenticated1(authctxt);
 
 	/* remove agent socket */
-#ifdef CLIVER
-	if (ktest_verify_auth_get_socket_name())
-#else
 	if (auth_get_socket_name())
-#endif
 		auth_sock_cleanup_proc(authctxt->pw);
 #ifdef KRB4
 	if (options.kerberos_ticket_cleanup)

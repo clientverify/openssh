@@ -406,37 +406,14 @@ int ktest_verify_pam_end(int flags){
   } else assert(0);
 }
 
-char* ktest_verify_auth_get_socket_name(void){
-  printf("ktest_verify_auth_get_socket_name entered\n");
-  int dummy = 0;
-  int set_sz = 200;
+void ktest_verify_send_string(char* str){
+  printf("ktest_verify_send_string sending: %s\n", str);
   if(ktest_get_mode() == KTEST_NONE){
-    return auth_get_socket_name();
   } else if (ktest_get_mode() == KTEST_RECORD){
     do_not_record_this_record();
     //to model the call out to the monitor we must have a writesocket:
-    ktest_writesocket(monitor_socket, (char*)&dummy, sizeof(dummy));
-    char* ret = auth_get_socket_name();
-    if(ret == NULL){
-      do_not_record_this_record();
-      ktest_record_readbuf(monitor_socket, ret, 0);
-    }else{
-      assert(strlen(ret) < set_sz);
-      do_not_record_this_record();
-      ktest_record_readbuf(monitor_socket, ret, strlen(ret));
-    }
-    return ret;
+    ktest_writesocket(monitor_socket, str, strlen(str));
   } else if (ktest_get_mode() == KTEST_PLAYBACK){
-    ktest_writesocket(monitor_socket, (char*)&dummy, sizeof(dummy));
-    char* ret = malloc(set_sz);
-    assert(ret != NULL);
-    int sz = ktest_readsocket(monitor_socket, &ret, set_sz);
-    assert(sz < set_sz);
-    if(sz == 0){
-      free(ret);
-      return NULL;
-    } else {
-      return ret;
-    }
+    ktest_writesocket(monitor_socket, str, strlen(str));
   } else assert(0);
 }

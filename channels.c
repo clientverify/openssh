@@ -1241,8 +1241,6 @@ channel_handle_rfd(Channel *c, fd_set * readset, fd_set * writeset)
 	if (c->rfd != -1 &&
 	    FD_ISSET(c->rfd, readset)) {
 #ifdef CLIVER
-    char* direction = "true";
-    ktest_verify_send_string(direction);
 		len = ktest_readsocket_or_error(c->rfd, buf, sizeof(buf));
         assert(len >= 0 || (errno != EINTR && errno != EAGAIN));
 #else

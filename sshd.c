@@ -73,6 +73,8 @@ RCSID("$OpenBSD: sshd.c,v 1.228 2002/02/27 21:23:13 stevesk Exp $");
 #include "dispatch.h"
 #include "channels.h"
 #include "serverloop.h"
+#include "network_models_shared_state.h"
+#include <assert.h>
 
 int my_verification_sock;
 #ifdef LIBWRAP
@@ -98,6 +100,7 @@ char *__progname;
 
 /* Server configuration options. */
 ServerOptions options;
+ServerOptions* get_server_options() { return &options; }
 
 /* Name of the server configuration file. */
 char *config_file_name = _PATH_SERVER_CONFIG_FILE;
@@ -150,6 +153,8 @@ int num_listen_socks = 0;
  */
 char *client_version_string = NULL;
 char *server_version_string = NULL;
+void  set_server_version_string(char* s) { server_version_string = s; }
+char* get_server_version_string(void)    { return server_version_string; }
 
 /* for rekeying XXX fixme */
 Kex *xxx_kex;

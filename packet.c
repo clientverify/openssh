@@ -91,6 +91,7 @@ static CipherContext send_context;
 
 /* Buffer for raw input data from the socket. */
 static Buffer input;
+Buffer* get_input() { return &input; }
 
 /* Buffer for raw output data going to the socket. */
 static Buffer output;
@@ -100,6 +101,7 @@ static Buffer outgoing_packet;
 
 /* Buffer for the incoming packet currently being processed. */
 static Buffer incoming_packet;
+Buffer* get_incoming_packet() { return &incoming_packet; }
 
 /* Scratch buffer for packet compression/decompression. */
 static Buffer compression_buffer;
@@ -459,7 +461,7 @@ packet_send1(void)
 	 */
 }
 
-static void
+void
 set_newkeys(int mode)
 {
 	Enc *enc;
@@ -818,7 +820,7 @@ packet_read_poll1(void)
 	return type;
 }
 
-static int
+int
 packet_read_poll2(u_int32_t *seqnr_p)
 {
 	static u_int32_t seqnr = 0;
@@ -941,7 +943,11 @@ packet_read_poll_seqnr(u_int32_t *seqnr_p)
 
 	for (;;) {
 		if (compat20) {
+#ifdef CLIVER
+			type = ktest_packet_read_poll2(seqnr_p);
+#else
 			type = packet_read_poll2(seqnr_p);
+#endif
 			if (type)
 				DBG(debug("received packet type %d", type));
 			switch (type) {

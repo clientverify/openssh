@@ -930,16 +930,12 @@ main(int ac, char **av)
 			break;
 #ifdef CLIVER
        case 'r':
-           arg_ktest_mode = KTEST_RECORD;
-           arg_ktest_filename = optarg;
-           ktest_start(arg_ktest_filename, arg_ktest_mode);
-           fprintf(stdout, "Recording to: %s\n", arg_ktest_filename);
+           ktest_start(optarg, KTEST_RECORD);
+           fprintf(stdout, "Recording to: %s\n", optarg);
            break;
         case 'a':
-           arg_ktest_mode = KTEST_PLAYBACK;
-           arg_ktest_filename = optarg;
-           ktest_start(arg_ktest_filename, arg_ktest_mode);
-           fprintf(stdout, "Playing back from: %s\n", arg_ktest_filename);
+           ktest_start(optarg, KTEST_PLAYBACK);
+           fprintf(stdout, "Playing back from: %s\n", optarg);
            break;
 #endif
 		case 'f':
